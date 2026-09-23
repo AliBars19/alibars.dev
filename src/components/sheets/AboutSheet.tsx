@@ -14,7 +14,7 @@ export function AboutSheet({ onBack }: { onBack: () => void }) {
         {about.photos.map((photo, i) => (
           <div className={`${styles.polaroid} ${SIDES[i]}`} key={photo.src}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={photo.src} alt={photo.caption} />
+            <img src={photo.src} alt={photo.alt} />
             <span className={styles.caption}>{photo.caption}</span>
           </div>
         ))}

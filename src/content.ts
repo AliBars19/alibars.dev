@@ -268,8 +268,8 @@ export const video = {
 
 export const about = {
   photos: [
-    { src: '/images/cv-portrait.webp', caption: 'London, UK' },
-    { src: '/images/cv-activity.webp', caption: 'Paris, France' },
+    { src: '/images/cv-portrait.webp', caption: 'London, UK', alt: 'Portrait photo of Ali Bars in London' },
+    { src: '/images/cv-activity.webp', caption: 'Paris, France', alt: 'Ali Bars in Paris' },
   ],
   title: 'Off the page',
   body: "CS at City, University of London. When I'm not shipping, I'm watching F1, deep in music, or playing something competitive.",
