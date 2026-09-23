@@ -1,4 +1,18 @@
+import { readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
+
+const OUT_DIR = join(process.cwd(), 'out');
+
+/** Every built HTML file's raw source, keyed by its path relative to out/. */
+function builtHtmlFiles(): Map<string, string> {
+  const files = new Map<string, string>();
+  for (const name of readdirSync(OUT_DIR)) {
+    if (!name.endsWith('.html')) continue;
+    files.set(name, readFileSync(join(OUT_DIR, name), 'utf-8'));
+  }
+  return files;
+}
 
 /** Collects every `pageerror` (uncaught exception) fired on `page`. */
 function trackPageErrors(page: Page): string[] {
@@ -395,16 +409,19 @@ test.describe('the pile', () => {
 
   const INK = 'rgb(28, 27, 25)';
 
-  test('all 5 CV highlights (4 yellow + 1 purple) keep ink text colour at rest, on hover and on focus, and the background changes on hover (slice-cvcr4-01 / code-r4-02)', async ({
+  test('all 4 CV yellow highlights keep ink text colour at rest, on hover and on focus, and the background changes on hover (slice-cvcr4-01 / code-r4-02)', async ({
     page,
   }) => {
+    // The Automated Publishing Platform highlight (the only purple one) is
+    // excluded here: its GitHub URL is still a TODO placeholder as of this
+    // round, so per the owner rule (fix round 4b) it renders as plain text,
+    // not a highlight link. See the dedicated test below.
     await page.goto('/#cv');
     const highlightNames = [
       /Founder & Lead Engineer/,
       /Data Acquisition & Firmware Engineer/,
       /Video Automation Pipeline/,
       /motorsport \/ F1, music, esports/,
-      /Automated Publishing Platform/,
     ];
     for (const name of highlightNames) {
       const link = page.getByRole('link', { name });
@@ -472,5 +489,32 @@ test.describe('the pile', () => {
     expect(opacity).toBeGreaterThan(0);
     expect(opacity).toBeLessThan(1);
     await context.close();
+  });
+
+  test('no href in the built out/ HTML contains a TODO placeholder (owner rule, fix round 4b)', () => {
+    const files = builtHtmlFiles();
+    expect(files.size).toBeGreaterThan(0);
+    for (const [name, html] of files) {
+      const hrefMatches = html.match(/href="[^"]*"/g) ?? [];
+      const placeholderHrefs = hrefMatches.filter((h) => h.includes('TODO'));
+      expect(placeholderHrefs, `${name} has a placeholder href: ${placeholderHrefs.join(', ')}`).toEqual([]);
+    }
+  });
+
+  test('the Crumbify CTA row and the Video GitHub CTA are hidden while their URLs are still TODO placeholders, and the Automated Publishing Platform title is plain text, not a link', async ({
+    page,
+  }) => {
+    await page.goto('/#crumbify');
+    await expect(page.getByRole('heading', { level: 2, name: 'Crumbify' })).toBeVisible();
+    await expect(page.getByRole('link', { name: /Get it on the App Store/ })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: /View on GitHub/ })).toHaveCount(0);
+
+    await page.goto('/#video');
+    await expect(page.getByRole('heading', { level: 2, name: 'Audio in, lyric video out.' })).toBeVisible();
+    await expect(page.getByRole('link', { name: /View the code on GitHub/ })).toHaveCount(0);
+
+    await page.goto('/#cv');
+    await expect(page.getByRole('link', { name: /Automated Publishing Platform/ })).toHaveCount(0);
+    await expect(page.getByText('Automated Publishing Platform')).toBeVisible();
   });
 });
