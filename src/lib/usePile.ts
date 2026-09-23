@@ -9,6 +9,8 @@ export type PileState = {
   top: SheetId;
   phase: Phase;
   moving: MovingState;
+  /** True after the first successful bring(); never resets within a page session. */
+  touched: boolean;
 };
 
 export type UsePileResult = {
@@ -37,7 +39,7 @@ export function usePile(): UsePileResult {
   const [state, setState] = useState<PileState>(() => {
     const deepLink = typeof window !== 'undefined' && window.location.hash;
     const skipIntro = Boolean(deepLink) || prefersReducedMotion();
-    return { top: initialTop(), phase: skipIntro ? 'done' : 'off', moving: null };
+    return { top: initialTop(), phase: skipIntro ? 'done' : 'off', moving: null, touched: false };
   });
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   // Mirrors `state` synchronously so bring()/pull() can read the latest
@@ -82,7 +84,7 @@ export function usePile(): UsePileResult {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
       const prevTop = s.top;
-      setState((prev) => ({ ...prev, moving: { k, prev: prevTop, stage: 'out' } }));
+      setState((prev) => ({ ...prev, moving: { k, prev: prevTop, stage: 'out' }, touched: true }));
       at(440, () =>
         setState((prev) =>
           prev.moving && prev.moving.k === k ? { ...prev, moving: { k, prev: prevTop, stage: 'in' } } : prev

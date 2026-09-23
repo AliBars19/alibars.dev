@@ -57,7 +57,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en-GB">
       <head>
         <link rel="icon" href="/icon.svg" type="image/svg+xml" />
-        {/* eslint-disable-next-line @next/next/no-sync-scripts */}
         <script dangerouslySetInnerHTML={{ __html: preHydrationScript }} />
       </head>
       <body className={`${plexSans.variable} ${plexMono.variable} ${sourceSerif.variable}`}>{children}</body>

@@ -7,7 +7,9 @@
  *  - Unknown URLs are '#TODO-...' placeholders so buttons still render.
  */
 
-export type SheetId = 'cv' | 'crumbify' | 'racing' | 'video' | 'about';
+import type { SheetId } from '@/lib/pile';
+
+export type { SheetId };
 
 export type Tab = { id: SheetId; label: string; color: string };
 

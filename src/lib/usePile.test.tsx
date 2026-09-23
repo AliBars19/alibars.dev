@@ -180,6 +180,25 @@ describe('usePile', () => {
     expect(result.current.state.phase).toBe('done');
   });
 
+  it('touched flips to true on first bring() and never resets, even after returning to CV', () => {
+    const { result } = renderHook(() => usePile());
+    finishIntro(result);
+    expect(result.current.state.touched).toBe(false);
+
+    act(() => {
+      result.current.bring('crumbify');
+      vi.advanceTimersByTime(960);
+    });
+    expect(result.current.state.touched).toBe(true);
+
+    act(() => {
+      result.current.bring('cv');
+      vi.advanceTimersByTime(960);
+    });
+    expect(result.current.state.top).toBe('cv');
+    expect(result.current.state.touched).toBe(true);
+  });
+
   it('cleans up its timers and listeners on unmount without throwing', () => {
     const { result, unmount } = renderHook(() => usePile());
     act(() => {
