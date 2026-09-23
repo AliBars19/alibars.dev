@@ -67,6 +67,34 @@ test.describe('the pile', () => {
     }
   });
 
+  test('at 390px, the pile does not jump when the intro ends: the mobile tab row reserves its space from the first paint (slice-rvat-02)', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/');
+    const stage = page.locator('.js-stage');
+    // Document-relative top, not viewport-relative: dismissing the intro
+    // also moves focus onto the CV sheet, which scrolls the page, so a
+    // plain getBoundingClientRect() before/after would conflate "the pile
+    // moved" with "the page scrolled". Adding scrollY isolates the pile's
+    // own layout position, which is what slice-rvat-02 is about.
+    const docTop = () => stage.evaluate((el) => el.getBoundingClientRect().top + window.scrollY);
+
+    const titlePage = page.getByRole('button', { name: /click to open/ });
+    await expect(titlePage).toBeVisible();
+    // Wait for the 120ms push transition (and layout/fonts) to settle
+    // before taking the "before" measurement, so this isn't measuring a
+    // not-yet-laid-out first frame.
+    await page.waitForTimeout(200);
+    const beforeTop = await docTop();
+
+    await titlePage.click();
+    await page.waitForTimeout(1100);
+
+    const afterTop = await docTop();
+    expect(afterTop).toBeCloseTo(beforeTop, 0);
+  });
+
   test('tabs navigate between sheets and back pills return to the CV', async ({ page }) => {
     await page.goto('/#cv');
     await page.getByRole('button', { name: 'racing' }).click();
@@ -125,15 +153,20 @@ test.describe('the pile', () => {
   }) => {
     const context = await browser.newContext({ colorScheme: 'dark' });
     const page = await context.newPage();
-    // Slow the script down so the pre-hydration (CSS-only) frame is
-    // actually observable instead of racing past it.
-    await page.route('**/*.js', async (route) => {
-      await new Promise((r) => setTimeout(r, 300));
-      await route.continue();
-    });
+    // Abort every JS chunk outright so React never hydrates: goto('load')
+    // alone still waits for async chunks to finish loading (they just no
+    // longer run), so reading the label after goto would otherwise observe
+    // the post-hydration DOM even for the old, React-driven label
+    // (code-r3-02).
+    await page.route('**/_next/static/chunks/**', (route) => route.abort());
     await page.goto('/#cv');
     const firstPaintText = await page.getByRole('button', { name: /Lights (off|on)/ }).innerText();
     expect(firstPaintText).toBe('Lights on');
+    // Proves the page really is un-hydrated: the desktop tab row only ever
+    // mounts once phase reaches 'done', which needs React running (the
+    // mobile row, unlike this one, is in the static HTML from the start so
+    // it does not distinguish hydration state).
+    expect(await page.evaluate(() => document.querySelectorAll('nav[data-variant="desktop"]').length)).toBe(0);
     await context.close();
   });
 
@@ -211,6 +244,36 @@ test.describe('the pile', () => {
     await expect(page).toHaveTitle('City Racing · Ali Bars');
   });
 
+  test('a deep-link title survives heavy CPU throttling and never flickers back to "Ali Bars" (round-3: slice-NOT-FIXED-01 / code-r3-01 and duplicates)', async ({
+    page,
+    context,
+  }) => {
+    // Records every value document.title ever takes, so a transient
+    // flicker back to 'Ali Bars' fails the test even if the final title
+    // (checked below) happens to be correct.
+    await page.addInitScript(() => {
+      (window as unknown as { __titleLog: string[] }).__titleLog = [];
+      const record = () => (window as unknown as { __titleLog: string[] }).__titleLog.push(document.title);
+      const observer = new MutationObserver(record);
+      const attach = () => {
+        if (document.head) observer.observe(document.head, { childList: true, subtree: true, characterData: true });
+        else requestAnimationFrame(attach);
+      };
+      attach();
+      record();
+    });
+    const cdp = await context.newCDPSession(page);
+    await cdp.send('Emulation.setCPUThrottlingRate', { rate: 6 });
+    await page.goto('/#racing');
+    await page.waitForTimeout(3000);
+    await expect(page).toHaveTitle('City Racing · Ali Bars');
+
+    const log: string[] = await page.evaluate(() => (window as unknown as { __titleLog: string[] }).__titleLog);
+    const firstCorrect = log.findIndex((t) => t === 'City Racing · Ali Bars');
+    expect(firstCorrect).toBeGreaterThanOrEqual(0);
+    expect(log.slice(firstCorrect)).not.toContain('Ali Bars');
+  });
+
   test('dismissing the title page with the keyboard moves focus into the CV, not past it', async ({ page }) => {
     await page.goto('/');
     const titlePage = page.getByRole('button', { name: /click to open/ });
@@ -282,6 +345,11 @@ test.describe('the pile', () => {
     await page.goto('/#crumbify');
     const nav = page.locator('[data-variant="mobile"]');
     await expect(nav).toBeVisible();
+    // Guards the fix itself (slice-r2-03), not just its end state: an
+    // instant opacity 1 -> 0 change also ends at '0' with no transition at
+    // all (code-r3-03).
+    expect(await nav.evaluate((el) => getComputedStyle(el).transitionProperty)).toContain('opacity');
+    expect(await nav.evaluate((el) => getComputedStyle(el).transitionDuration)).toBe('0.2s');
     await page.getByRole('button', { name: 'about' }).click();
     await expect.poll(() => nav.evaluate((el) => getComputedStyle(el).opacity)).toBe('0');
   });
