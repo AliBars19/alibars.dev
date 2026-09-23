@@ -1,4 +1,5 @@
 import { video } from '@/content';
+import { isPlaceholderUrl } from '@/lib/url';
 import { GithubIcon } from '../GithubIcon';
 import { ProjectHeader } from '../ProjectHeader';
 import sheetStyles from '../Sheet.module.css';
@@ -34,10 +35,13 @@ export function VideoSheet({ onBack }: { onBack: () => void }) {
         </p>
       ))}
 
-      <a className={styles.cta} href={video.cta.href} target="_blank" rel="noopener noreferrer">
-        {video.cta.icon === 'github' && <GithubIcon size={20} />}
-        {video.cta.label}
-      </a>
+      {/* Owner rule (fix round 4b): hidden while video.cta.href is still a TODO placeholder. */}
+      {!isPlaceholderUrl(video.cta.href) && (
+        <a className={styles.cta} href={video.cta.href} target="_blank" rel="noopener noreferrer">
+          {video.cta.icon === 'github' && <GithubIcon size={20} />}
+          {video.cta.label}
+        </a>
+      )}
     </div>
   );
 }
