@@ -414,10 +414,15 @@ test.describe('the pile', () => {
       expect(restColor).toBe(INK);
 
       await link.hover();
+      // The background change runs on `transition: background 0.2s`
+      // (Highlight.module.css), so poll instead of reading immediately
+      // after hover() (which can catch the transition mid-flight, or even
+      // its very first, still-rest-coloured frame).
+      await expect
+        .poll(() => link.evaluate((el) => getComputedStyle(el).backgroundColor))
+        .not.toBe(restBg);
       const hoverColor = await link.evaluate((el) => getComputedStyle(el).color);
-      const hoverBg = await link.evaluate((el) => getComputedStyle(el).backgroundColor);
       expect(hoverColor).toBe(INK);
-      expect(hoverBg).not.toBe(restBg);
 
       await link.focus();
       const focusColor = await link.evaluate((el) => getComputedStyle(el).color);
