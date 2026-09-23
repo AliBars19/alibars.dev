@@ -1,0 +1,78 @@
+.subtitle {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+  font-family: var(--font-mono);
+}
+
+.heroWrap {
+  position: relative;
+  transform: rotate(-1deg);
+}
+
+.heroWrap img {
+  width: 100%;
+  aspect-ratio: 2 / 1;
+  object-fit: cover;
+  display: block;
+}
+
+.tape {
+  position: absolute;
+  top: -9px;
+  width: 22%;
+  height: 20px;
+  background: var(--tape);
+}
+
+.tapeLeft {
+  left: 12%;
+}
+
+.tapeRight {
+  right: 12%;
+}
+
+.paragraph {
+  font-size: 15.5px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 24px;
+  align-items: center;
+}
+
+@media (max-width: 599px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.polaroid {
+  transform: rotate(2deg);
+  background: #fff;
+  padding: 10px 10px 28px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
+}
+
+.polaroidFrame {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+}
+
+.polaroidFrame img {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.website {
+  font-size: 15.5px;
+  margin: 0;
+}
