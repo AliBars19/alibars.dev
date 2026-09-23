@@ -4,7 +4,7 @@ import sheetStyles from '../Sheet.module.css';
 import styles from './RacingSheet.module.css';
 
 export function RacingSheet({ onBack }: { onBack: () => void }) {
-  const { scale, x, y } = racing.gps.imageCrop;
+  const { scale } = racing.gps.imageCrop;
   return (
     <div className={sheetStyles.wrapWide}>
       <ProjectHeader date={racing.date} onBack={onBack} />
@@ -32,7 +32,16 @@ export function RacingSheet({ onBack }: { onBack: () => void }) {
             <img
               src={racing.gps.image}
               alt="GPS lap trace overlaid on the FSUK circuit map"
-              style={{ transform: `scale(${scale}) translate(${x}%, ${y}%)` }}
+              // Reference stores this crop as scale 1.8 / offset x +18% / y +50%
+              // (design_handoff .../reference/.image-slots.state.json), which the
+              // reference runtime applies as a pan on top of an object-fit:cover
+              // baseline. The source asset is a low-res phone photo of a laptop
+              // screen (161x348px; the handoff flags it for replacement with a
+              // higher-res original from Ali), so we reproduce the *intent* here
+              // (zoom into the on-screen map, centred on the GPS track) via
+              // object-position, tuned to frame the map instead of the laptop
+              // bezel/keyboard visible in the source.
+              style={{ objectPosition: '58% 22%', transform: `scale(${scale})` }}
             />
           </div>
         </div>

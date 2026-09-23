@@ -15,10 +15,11 @@ describe('RacingSheet', () => {
     expect(document.body.textContent).not.toContain('—');
   });
 
-  it('applies the reference GPS image crop (scale 1.8, x +18%, y +50%)', () => {
+  it('applies the reference GPS crop scale (1.8) via object-position + scale so the frame always stays covered', () => {
     render(<RacingSheet onBack={() => {}} />);
     const img = screen.getByAltText('GPS lap trace overlaid on the FSUK circuit map');
-    expect(img).toHaveStyle({ transform: 'scale(1.8) translate(18%, 50%)' });
+    expect(img).toHaveStyle({ transform: 'scale(1.8)' });
+    expect(img.style.objectPosition).not.toBe('');
   });
 
   it('back pill calls onBack', async () => {

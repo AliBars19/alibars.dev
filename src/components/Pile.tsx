@@ -63,8 +63,8 @@ export function Pile() {
           {showIntro ? (
             <TitlePage pulling={phase === 'pull'} zIndex={M + 10} onDismiss={pull} />
           ) : null}
+          {showNote ? <StickyNote /> : null}
         </div>
-        {showNote ? <StickyNote /> : null}
       </div>
     </main>
   );
