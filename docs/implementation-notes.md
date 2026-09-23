@@ -21,3 +21,5 @@ Spec: `design_handoff_alibars_portfolio/README.md` (high fidelity, authoritative
 
 ## Orchestration log
 - 2026-09-23: Owner turned on ultracode. Acceptance checklist workflow run `wf_3d25cb30-77c` wrote `docs/acceptance-checklist.md` (214 items). Decision: `/#cv` also skips the intro and shows the CV.
+- 2026-09-23: Build by Claude sonnet fallback (9 commits, 6b88e12..11ae14d). Orchestrator reran every gate: typecheck, lint, 74 unit tests (99% statement coverage), static build and 14 e2e tests all green. Review round 1 workflow `wf_d41f1cbf-3e6`; args `{"root":"C:/Users/aliba/Downloads/alibars.dev","scratch":"<session scratchpad>/review-r1"}`.
+- 2026-09-23: Review round 1: 48 findings, 47 confirmed and 1 refuted, saved in `docs/review/round-1.md` and `round-1.json`. The critical and high findings are hydration bugs (dark theme lost, deep links throw React #418) and an unguarded localStorage write. Fix round 1 workflow `wf_798fcc79-b9a`: two sonnet writers on disjoint files. Kept `lang="en-GB"`, overriding the checklist's "en".
