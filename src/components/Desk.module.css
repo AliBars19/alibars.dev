@@ -21,6 +21,10 @@
   text-decoration: underline;
 }
 
+.download:hover {
+  color: inherit;
+}
+
 .toggle {
   font: inherit;
   color: inherit;

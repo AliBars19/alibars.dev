@@ -110,6 +110,9 @@ button {
   outline-offset: 2px;
 }
 
-[data-desk='dark'] :focus-visible {
+/* Only desk-level controls (the header) get the light outline in dark mode;
+   controls on paper sheets keep the dark #1c1b19 outline (gl-24), since
+   sheets stay light-paper coloured regardless of the desk theme. */
+[data-desk='dark'] header :focus-visible {
   outline-color: var(--desk-ink-dark);
 }

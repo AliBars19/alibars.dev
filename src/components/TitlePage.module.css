@@ -50,6 +50,7 @@
   max-width: 440px;
   line-height: 1.45;
   margin: 0;
+  text-wrap: pretty;
 }
 
 .cta {

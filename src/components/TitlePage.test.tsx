@@ -19,5 +19,16 @@ describe('TitlePage', () => {
     btn.focus();
     await userEvent.keyboard('{Enter}');
     expect(onDismiss).toHaveBeenCalledTimes(2);
+
+    await userEvent.keyboard(' ');
+    expect(onDismiss).toHaveBeenCalledTimes(3);
+  });
+
+  it('is a div (not a <button>), so wrapping the <h1> is valid content and it stays exposed as a heading', () => {
+    render(<TitlePage pulling={false} zIndex={26} onDismiss={() => {}} />);
+    const control = screen.getByRole('button');
+    expect(control.tagName).toBe('DIV');
+    expect(control).toHaveAttribute('tabindex', '0');
+    expect(screen.getByRole('heading', { level: 1, name: 'Ali Bars' })).toBeInTheDocument();
   });
 });
