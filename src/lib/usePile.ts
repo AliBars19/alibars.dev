@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { canBring, hashForSheet, sheetFromHash, type MovingState, type SheetId } from './pile';
 
 export type Phase = 'off' | 'push' | 'pull' | 'done';
@@ -17,6 +17,7 @@ export type UsePileResult = {
   state: PileState;
   pull: () => void;
   bring: (k: SheetId) => void;
+  reducedMotion: boolean;
 };
 
 function prefersReducedMotion(): boolean {
@@ -24,30 +25,25 @@ function prefersReducedMotion(): boolean {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
-function initialTop(): SheetId {
-  if (typeof window === 'undefined') return 'cv';
-  return sheetFromHash(window.location.hash) ?? 'cv';
+/**
+ * The one place that decides whether a load skips the intro: a hash that
+ * names a real sheet, or a reduced-motion preference. The pre-hydration
+ * script (app/layout.tsx) checks the same sheet-id whitelist against the
+ * same hash, so the very first paint and this mount-time effect agree, and
+ * an *unknown* hash (e.g. `#bogus`) plays the intro normally instead of
+ * jumping straight to the CV.
+ */
+function resolveIntro(): { hashTop: SheetId | null; skip: boolean; reduced: boolean } {
+  const reduced = prefersReducedMotion();
+  const hashTop = sheetFromHash(window.location.hash);
+  return { hashTop, skip: hashTop !== null || reduced, reduced };
 }
 
-/**
- * Phase machine driving the pile: off -> push (120ms) -> [click] -> pull ->
- * done (1000ms), plus bring(k) for pulling a sheet to the top
- * (out at 0ms -> in at 440ms -> settled at 960ms). Mirrors the reference
- * prototype's Component class timings exactly.
- */
-export function usePile(): UsePileResult {
-  const [state, setState] = useState<PileState>(() => {
-    const deepLink = typeof window !== 'undefined' && window.location.hash;
-    const skipIntro = Boolean(deepLink) || prefersReducedMotion();
-    return { top: initialTop(), phase: skipIntro ? 'done' : 'off', moving: null, touched: false };
-  });
+const SSR_STATE: PileState = { top: 'cv', phase: 'off', moving: null, touched: false };
+
+/** Debounced setTimeout scheduling that always clears its own timers on unmount. */
+function useTimers() {
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
-  // Mirrors `state` synchronously so bring()/pull() can read the latest
-  // value without depending on the setState functional-updater timing
-  // (scheduling setTimeout as a side effect *inside* an updater is unsafe:
-  // React may invoke updaters more than once, or defer them).
-  const stateRef = useRef(state);
-  stateRef.current = state;
 
   const at = useCallback((ms: number, fn: () => void) => {
     timers.current.push(setTimeout(fn, ms));
@@ -58,13 +54,81 @@ export function usePile(): UsePileResult {
     timers.current = [];
   }, []);
 
-  // Intro: schedule the push transition unless we already skipped to 'done'.
+  useEffect(() => clearTimers, [clearTimers]);
+
+  return { at, clearTimers };
+}
+
+/**
+ * Keeps document title/URL hash in sync with the top sheet. The first run
+ * only normalises a load-time hash (e.g. /#cv, /#bogus) with replaceState;
+ * every later change from a user bring() pushes a new history entry so
+ * browser Back can return to what was on top before.
+ */
+function useHashSync(top: SheetId, phase: Phase) {
+  const didInitRef = useRef(false);
+
   useEffect(() => {
-    setState((s) => {
-      if (s.phase !== 'off') return s;
+    if (phase !== 'done') return;
+    const isInitialSync = !didInitRef.current;
+    didInitRef.current = true;
+    const hash = hashForSheet(top);
+    const current = window.location.hash;
+    if (current === hash) return;
+    const method = isInitialSync ? window.history.replaceState : window.history.pushState;
+    method.call(window.history, null, '', `${window.location.pathname}${hash}`);
+  }, [top, phase]);
+}
+
+/** Esc brings the CV to the top; hashchange (incl. browser Back) calls bring(). */
+function usePileKeys(bring: (k: SheetId) => void) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') bring('cv');
+    };
+    const onHashChange = () => {
+      bring(sheetFromHash(window.location.hash) ?? 'cv');
+    };
+    window.addEventListener('keydown', onKey);
+    window.addEventListener('hashchange', onHashChange);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('hashchange', onHashChange);
+    };
+  }, [bring]);
+}
+
+/**
+ * Phase machine driving the pile: off -> push (120ms) -> [click] -> pull ->
+ * done (1000ms), plus bring(k) for pulling a sheet to the top
+ * (out at 0ms -> in at 440ms -> settled at 960ms). Mirrors the reference
+ * prototype's Component class timings exactly.
+ *
+ * The initial state is always the server-rendered default so hydration
+ * never mismatches (React error #418): a useLayoutEffect resolves the real
+ * deep-link/reduced-motion state on mount, before the browser paints, using
+ * the `[data-intro='skip']` CSS in globals.css to keep the pre-hydration
+ * frame hidden in the meantime.
+ */
+export function usePile(): UsePileResult {
+  const [state, setState] = useState<PileState>(SSR_STATE);
+  const [reducedMotion, setReducedMotion] = useState(false);
+  // Mirrors `state` synchronously so bring()/pull() can read the latest
+  // value without depending on the setState functional-updater timing
+  // (scheduling setTimeout as a side effect *inside* an updater is unsafe:
+  // React may invoke updaters more than once, or defer them).
+  const stateRef = useRef(state);
+  stateRef.current = state;
+  const { at, clearTimers } = useTimers();
+
+  useLayoutEffect(() => {
+    const { hashTop, skip, reduced } = resolveIntro();
+    setReducedMotion(reduced);
+    if (skip) {
+      setState((prev) => ({ ...prev, top: hashTop ?? prev.top, phase: 'done' }));
+    } else {
       at(120, () => setState((prev) => (prev.phase === 'off' ? { ...prev, phase: 'push' } : prev)));
-      return s;
-    });
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -97,35 +161,8 @@ export function usePile(): UsePileResult {
     [at]
   );
 
-  // Keep document.title and the URL hash in sync with the top sheet.
-  useEffect(() => {
-    if (state.phase !== 'done') return;
-    const hash = hashForSheet(state.top);
-    const current = window.location.hash;
-    if (current !== hash) {
-      const method = current ? window.history.pushState : window.history.replaceState;
-      method.call(window.history, null, '', `${window.location.pathname}${hash}`);
-    }
-  }, [state.top, state.phase]);
+  useHashSync(state.top, state.phase);
+  usePileKeys(bring);
 
-  // Esc brings the CV to the top; hashchange/back button call bring().
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') bring('cv');
-    };
-    const onHashChange = () => {
-      const next = sheetFromHash(window.location.hash) ?? 'cv';
-      bring(next);
-    };
-    window.addEventListener('keydown', onKey);
-    window.addEventListener('hashchange', onHashChange);
-    return () => {
-      window.removeEventListener('keydown', onKey);
-      window.removeEventListener('hashchange', onHashChange);
-    };
-  }, [bring]);
-
-  useEffect(() => clearTimers, [clearTimers]);
-
-  return { state, pull, bring };
+  return { state, pull, bring, reducedMotion };
 }

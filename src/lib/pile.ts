@@ -34,7 +34,12 @@ export function jitter(id: string): Jitter {
   };
 }
 
-const FILLER_TONES = ['#f6f3ec', '#f1ede3', '#f8f6f0', '#eeeadf'] as const;
+const FILLER_TONES = [
+  'var(--paper-alt-1)',
+  'var(--paper-alt-2)',
+  'var(--paper-alt-3)',
+  'var(--paper-alt-4)',
+] as const;
 
 export type FillerSheet = { id: string; z: number; bg: string; transform: string };
 
@@ -65,6 +70,7 @@ export type SheetStyle = {
   transform: string;
   z: number;
   visible: boolean;
+  opacity: number;
 };
 
 /**
@@ -74,19 +80,25 @@ export type SheetStyle = {
  *  - moving.k / 'in'   -> z = m+3, back at the straight position
  *  - moving.prev, or top with no move -> z = m+2, straight position
  *  - anything else -> hidden
+ *
+ * Under `reducedMotion`, sheets never translate off-stage: a swap is an
+ * instant cross-fade instead, driven by `opacity` (Sheet.module.css swaps
+ * its transition to `opacity` under the same media query).
  */
-export function sheetStyle(id: SheetId, state: PileTopState, m: number): SheetStyle {
+export function sheetStyle(id: SheetId, state: PileTopState, m: number, reducedMotion = false): SheetStyle {
   const { top, moving } = state;
   if (moving && moving.k === id) {
     if (moving.stage === 'out') {
-      return { transform: OUT_TRANSFORM, z: m + 1, visible: true };
+      return reducedMotion
+        ? { transform: STRAIGHT_TRANSFORM, z: m + 1, visible: true, opacity: 0 }
+        : { transform: OUT_TRANSFORM, z: m + 1, visible: true, opacity: 1 };
     }
-    return { transform: STRAIGHT_TRANSFORM, z: m + 3, visible: true };
+    return { transform: STRAIGHT_TRANSFORM, z: m + 3, visible: true, opacity: 1 };
   }
   if ((moving && moving.prev === id) || (!moving && top === id)) {
-    return { transform: STRAIGHT_TRANSFORM, z: m + 2, visible: true };
+    return { transform: STRAIGHT_TRANSFORM, z: m + 2, visible: true, opacity: 1 };
   }
-  return { transform: STRAIGHT_TRANSFORM, z: 0, visible: false };
+  return { transform: STRAIGHT_TRANSFORM, z: 0, visible: false, opacity: 1 };
 }
 
 /** Guards for bring(k): intro must be done, no move in flight, k not already on top. */

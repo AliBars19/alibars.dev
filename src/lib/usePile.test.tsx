@@ -199,7 +199,7 @@ describe('usePile', () => {
     expect(result.current.state.touched).toBe(true);
   });
 
-  it('cleans up its timers and listeners on unmount without throwing', () => {
+  it('cleans up its timers and listeners on unmount, leaving no pending timers', () => {
     const { result, unmount } = renderHook(() => usePile());
     act(() => {
       vi.advanceTimersByTime(120);
@@ -207,6 +207,62 @@ describe('usePile', () => {
     act(() => {
       result.current.pull();
     });
+    expect(vi.getTimerCount()).toBeGreaterThan(0);
     expect(() => unmount()).not.toThrow();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('a hashchange event (e.g. browser Back) brings the matching sheet to the top', () => {
+    const { result } = renderHook(() => usePile());
+    finishIntro(result);
+
+    act(() => {
+      window.location.hash = '#racing';
+      window.dispatchEvent(new HashChangeEvent('hashchange'));
+      vi.advanceTimersByTime(960);
+    });
+    expect(result.current.state.top).toBe('racing');
+  });
+
+  it('a hashchange to an empty hash (e.g. Back to /) brings the CV to the top', () => {
+    const { result } = renderHook(() => usePile());
+    finishIntro(result);
+    act(() => {
+      result.current.bring('crumbify');
+      vi.advanceTimersByTime(960);
+    });
+    expect(result.current.state.top).toBe('crumbify');
+
+    act(() => {
+      window.location.hash = '';
+      window.dispatchEvent(new HashChangeEvent('hashchange'));
+      vi.advanceTimersByTime(960);
+    });
+    expect(result.current.state.top).toBe('cv');
+  });
+
+  it('uses replaceState to normalise the load-time URL, then pushState for every later bring()', () => {
+    setHash('#cv');
+    const replaceSpy = vi.spyOn(window.history, 'replaceState');
+    const pushSpy = vi.spyOn(window.history, 'pushState');
+    const { result } = renderHook(() => usePile());
+
+    expect(result.current.state.phase).toBe('done');
+    expect(replaceSpy).toHaveBeenCalledTimes(1);
+    expect(pushSpy).not.toHaveBeenCalled();
+
+    act(() => {
+      result.current.bring('crumbify');
+      vi.advanceTimersByTime(960);
+    });
+    expect(pushSpy).toHaveBeenCalledTimes(1);
+    expect(replaceSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('an unknown hash plays the intro normally (does not skip to done)', () => {
+    setHash('#bogus');
+    const { result } = renderHook(() => usePile());
+    expect(result.current.state.phase).toBe('off');
+    expect(result.current.state.top).toBe('cv');
   });
 });

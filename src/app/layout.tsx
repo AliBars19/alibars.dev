@@ -18,8 +18,8 @@ const plexMono = IBM_Plex_Mono({
 
 const sourceSerif = Source_Serif_4({
   subsets: ['latin'],
-  weight: ['500', '600'],
-  style: ['normal', 'italic'],
+  axes: ['opsz'],
+  style: ['normal'],
   variable: '--font-source-serif',
   display: 'swap',
 });
@@ -54,7 +54,11 @@ const preHydrationScript = `(function(){try{
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en-GB" className={`${plexSans.variable} ${plexMono.variable} ${sourceSerif.variable}`}>
+    <html
+      lang="en-GB"
+      className={`${plexSans.variable} ${plexMono.variable} ${sourceSerif.variable}`}
+      suppressHydrationWarning
+    >
       <head>
         <link rel="icon" href="/icon.svg" type="image/svg+xml" />
         <script dangerouslySetInnerHTML={{ __html: preHydrationScript }} />

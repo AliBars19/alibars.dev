@@ -41,4 +41,22 @@ describe('useTheme', () => {
     expect(result.current.dark).toBe(false);
     expect(localStorage.getItem('alibars-desk')).toBe('light');
   });
+
+  it('still flips the desk when localStorage.setItem throws (e.g. blocked/full storage)', () => {
+    const setItemSpy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('QuotaExceededError');
+    });
+    const { result } = renderHook(() => useTheme());
+
+    expect(() => {
+      act(() => {
+        result.current.toggle();
+      });
+    }).not.toThrow();
+
+    expect(result.current.dark).toBe(true);
+    expect(result.current.label).toBe('Lights on');
+    expect(document.documentElement.getAttribute('data-desk')).toBe('dark');
+    setItemSpy.mockRestore();
+  });
 });

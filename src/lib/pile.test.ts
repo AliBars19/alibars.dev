@@ -56,8 +56,8 @@ describe('fillerSheets', () => {
     expect(fillerSheets(4)).toHaveLength(4);
   });
 
-  it('cycles backgrounds through the 4 tones and z-indexes 1..m', () => {
-    const tones = ['#f6f3ec', '#f1ede3', '#f8f6f0', '#eeeadf'];
+  it('cycles backgrounds through the 4 paper-alt tokens and z-indexes 1..m', () => {
+    const tones = ['var(--paper-alt-1)', 'var(--paper-alt-2)', 'var(--paper-alt-3)', 'var(--paper-alt-4)'];
     const fillers = fillerSheets(8);
     fillers.forEach((f, i) => {
       expect(f.z).toBe(i + 1);
@@ -123,6 +123,45 @@ describe('sheetStyle (z-index table)', () => {
       m
     );
     expect(style.visible).toBe(false);
+  });
+
+  it('every non-moving state is fully opaque, with or without reducedMotion', () => {
+    expect(sheetStyle('cv', { top: 'cv', moving: null }, m).opacity).toBe(1);
+    expect(sheetStyle('cv', { top: 'cv', moving: null }, m, true).opacity).toBe(1);
+  });
+
+  it('under reducedMotion, moving.k in "out" stays at the resting transform and fades out', () => {
+    const style = sheetStyle(
+      'crumbify',
+      { top: 'cv', moving: { k: 'crumbify', prev: 'cv', stage: 'out' } },
+      m,
+      true
+    );
+    expect(style.transform).toBe('translate(0,0) rotate(-.4deg)');
+    expect(style.opacity).toBe(0);
+    expect(style.visible).toBe(true);
+  });
+
+  it('under reducedMotion, moving.k in "in" stays at the resting transform, fully opaque', () => {
+    const style = sheetStyle(
+      'crumbify',
+      { top: 'cv', moving: { k: 'crumbify', prev: 'cv', stage: 'in' } },
+      m,
+      true
+    );
+    expect(style.transform).toBe('translate(0,0) rotate(-.4deg)');
+    expect(style.opacity).toBe(1);
+  });
+
+  it('without reducedMotion, moving.k in "out" still slides off to the right, fully opaque', () => {
+    const style = sheetStyle(
+      'crumbify',
+      { top: 'cv', moving: { k: 'crumbify', prev: 'cv', stage: 'out' } },
+      m,
+      false
+    );
+    expect(style.transform).toBe('translate(112%,-3%) rotate(5deg)');
+    expect(style.opacity).toBe(1);
   });
 });
 
