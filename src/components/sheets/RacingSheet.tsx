@@ -1,10 +1,12 @@
 import { racing } from '@/content';
+import { imageSlotStyle } from '@/lib/imageSlot';
 import { ProjectHeader } from '../ProjectHeader';
 import sheetStyles from '../Sheet.module.css';
 import styles from './RacingSheet.module.css';
 
 export function RacingSheet({ onBack }: { onBack: () => void }) {
-  const { scale, objectPosition } = racing.gps.imageCrop;
+  const { scale, x, y, naturalWidth, naturalHeight } = racing.gps.imageCrop;
+  const gpsCropStyle = imageSlotStyle({ naturalWidth, naturalHeight }, { scale, x, y });
   return (
     <div className={sheetStyles.wrapWide}>
       <ProjectHeader date={racing.date} onBack={onBack} />
@@ -32,9 +34,9 @@ export function RacingSheet({ onBack }: { onBack: () => void }) {
             <img
               src={racing.gps.image}
               alt="GPS lap trace overlaid on the FSUK circuit map"
-              // Crop values (and why they differ from the reference's literal
-              // pan numbers) live in content.ts next to racing.gps.imageCrop.
-              style={{ objectPosition, transform: `scale(${scale})` }}
+              // Reproduces the reference image-slot's own crop math exactly;
+              // see src/lib/imageSlot.ts and content.ts's racing.gps.imageCrop.
+              style={gpsCropStyle}
             />
           </div>
         </div>

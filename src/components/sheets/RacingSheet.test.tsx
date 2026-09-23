@@ -4,6 +4,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { racing } from '@/content';
+import { imageSlotStyle } from '@/lib/imageSlot';
 import { RacingSheet } from './RacingSheet';
 
 const cssSource = readFileSync(join(process.cwd(), 'src/components/sheets/RacingSheet.module.css'), 'utf-8');
@@ -20,11 +21,25 @@ describe('RacingSheet', () => {
     expect(document.body.textContent).not.toContain('—');
   });
 
-  it('applies the content-sourced GPS crop scale + objectPosition (no hardcoded magic string, code-13)', () => {
+  it('reproduces the reference image-slot crop exactly via an absolutely positioned img, not object-position + scale (slice-rv-gps-crop-01)', () => {
     render(<RacingSheet onBack={() => {}} />);
     const img = screen.getByAltText('GPS lap trace overlaid on the FSUK circuit map');
-    expect(img).toHaveStyle({ transform: `scale(${racing.gps.imageCrop.scale})` });
-    expect(img.style.objectPosition).toBe(racing.gps.imageCrop.objectPosition);
+    const { scale, x, y, naturalWidth, naturalHeight } = racing.gps.imageCrop;
+    const expected = imageSlotStyle({ naturalWidth, naturalHeight }, { scale, x, y });
+    expect(img).toHaveStyle({
+      position: 'absolute',
+      width: expected.width,
+      height: expected.height,
+      left: expected.left,
+      top: expected.top,
+      transform: expected.transform,
+    });
+    // The reference's literal reproduction: s:1.8 x:+18 y:+50 on the
+    // 161x348 asset resolves to width 180%, left 68%, top 100% (see
+    // src/lib/imageSlot.test.ts for the full derivation).
+    expect(expected.width).toBe('180%');
+    expect(expected.left).toBe('68%');
+    expect(expected.top).toBe('100%');
   });
 
   it('back pill calls onBack', async () => {

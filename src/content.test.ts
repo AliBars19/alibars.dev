@@ -57,9 +57,12 @@ describe('content', () => {
     }
   });
 
-  it('racing GPS crop carries a named objectPosition value, no dead x/y offset fields (code-13)', () => {
-    expect(racing.gps.imageCrop).toEqual({ scale: 1.8, objectPosition: '58% 22%' });
-    expect(racing.gps.imageCrop).not.toHaveProperty('x');
-    expect(racing.gps.imageCrop).not.toHaveProperty('y');
+  it('racing GPS crop reproduces the reference image-slot values exactly, in its own coordinate system (slice-rv-gps-crop-01)', () => {
+    // scale/x/y are the reference's literal pan (.image-slots.state.json:
+    // cv-racing-gps { s:1.8, x:18, y:50 }); naturalWidth/naturalHeight are
+    // the actual asset's pixel dimensions, both fed verbatim into
+    // src/lib/imageSlot.ts's `_applyView` reproduction — no derived,
+    // hand-tuned objectPosition value.
+    expect(racing.gps.imageCrop).toEqual({ scale: 1.8, x: 18, y: 50, naturalWidth: 161, naturalHeight: 348 });
   });
 });

@@ -92,8 +92,15 @@ describe('CvSheet', () => {
     expect(degree.closest(`.${styles.entryRow}`)).toBeNull();
   });
 
-  it('footer highlight stays #1c1b19 (ink), not the muted footer text colour (slice-cv-04)', () => {
-    const footerBlock = cssSource.match(/\.footer\s+a\s*{([^}]*)}/);
+  it('footer highlight stays #1c1b19 (ink) at rest, on hover and on focus, not the muted footer text colour (slice-cv-04, regression for slice-cvcr4-01)', () => {
+    // Matches `.footer a, .footer a:hover, .footer a:focus-visible {...}`
+    // (specificity 0,2,1): round 3 added `.yellow:hover{color:inherit}`
+    // (0,2,0) which outranked a bare `.footer a{color:var(--ink)}` (0,1,1)
+    // on hover/focus, so the :hover/:focus-visible variants must be
+    // present here too, not just the rest-state selector.
+    const footerBlock = cssSource.match(
+      /\.footer a,\s*\n?\s*\.footer a:hover,\s*\n?\s*\.footer a:focus-visible\s*{([^}]*)}/
+    );
     expect(footerBlock).not.toBeNull();
     expect(footerBlock?.[1]).toMatch(/color:\s*var\(--ink\)/);
   });

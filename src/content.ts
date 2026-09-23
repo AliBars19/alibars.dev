@@ -237,14 +237,18 @@ export const racing = {
     text: 'Projects logged GPS points onto satellite maps of the FSUK circuit, so you can see exactly where the simulated lap and the real one split.',
     image: '/images/cv-racing-gps.webp',
     // The reference stores this crop as scale 1.8 / offset x +18% / y +50%
-    // (design_handoff .../reference/.image-slots.state.json), a pan applied on
-    // top of an object-fit:cover baseline. That literal offset doesn't
-    // translate 1:1 through object-fit:cover on our copy of the (low-res,
-    // to-be-replaced) source asset, so objectPosition below reproduces the
-    // reference's *intent* (zoom into the on-screen map, centred on the GPS
-    // track) instead of the literal x/y pan values. See
+    // (design_handoff .../reference/.image-slots.state.json), applied by
+    // its image-slot component exactly as reproduced in src/lib/imageSlot.ts
+    // (ported from reference/image-slot.js `_applyView`, ~lines 1000-1060):
+    // the image is sized to cover the frame at `scale`, and its centre is
+    // pinned to (50+x)% / (50+y)% of the frame via an absolutely positioned
+    // <img> + translate(-50%,-50%). naturalWidth/naturalHeight are the
+    // actual asset's pixel dimensions (a low-res, to-be-replaced phone
+    // photo of a laptop screen, per the handoff) — the frame is square
+    // (RacingSheet.module.css .polaroidFrame, aspect-ratio:1/1), so the
+    // maths only needs the asset's own aspect ratio. See
     // docs/implementation-notes.md deviations log.
-    imageCrop: { scale: 1.8, objectPosition: '58% 22%' },
+    imageCrop: { scale: 1.8, x: 18, y: 50, naturalWidth: 161, naturalHeight: 348 },
   },
   website: { prefix: "Here's the team website →", label: 'csg.racing', href: 'https://csg.racing' },
 };
