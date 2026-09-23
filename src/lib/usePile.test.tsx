@@ -265,4 +265,85 @@ describe('usePile', () => {
     expect(result.current.state.phase).toBe('off');
     expect(result.current.state.top).toBe('cv');
   });
+
+  it('under reduced motion, bring() cross-fades in immediately (no "out" stage) and settles at 200ms', () => {
+    vi.spyOn(window, 'matchMedia').mockImplementation(
+      (query: string) =>
+        ({
+          matches: query.includes('prefers-reduced-motion'),
+          media: query,
+          addEventListener: () => {},
+          removeEventListener: () => {},
+        }) as unknown as MediaQueryList
+    );
+    const { result } = renderHook(() => usePile());
+    expect(result.current.state.phase).toBe('done');
+
+    act(() => {
+      result.current.bring('crumbify');
+    });
+    // No 440ms-invisible "out" stage: the incoming sheet is opaque from the
+    // very first tick.
+    expect(result.current.state.moving).toEqual({ k: 'crumbify', prev: 'cv', stage: 'in' });
+    expect(result.current.state.top).toBe('cv');
+
+    act(() => {
+      vi.advanceTimersByTime(199);
+    });
+    expect(result.current.state.moving).not.toBeNull();
+
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(result.current.state.moving).toBeNull();
+    expect(result.current.state.top).toBe('crumbify');
+  });
+
+  it('a hashchange (browser Back) that arrives mid-move is queued and replayed once the move settles', () => {
+    const { result } = renderHook(() => usePile());
+    finishIntro(result);
+
+    act(() => {
+      result.current.bring('crumbify');
+    });
+    expect(result.current.state.moving?.stage).toBe('out');
+
+    // Back fires while the move to crumbify is still in flight: canBring()
+    // would reject a direct bring(), so it must be queued instead of lost.
+    act(() => {
+      window.location.hash = '';
+      window.dispatchEvent(new HashChangeEvent('hashchange'));
+    });
+    expect(result.current.state.moving?.k).toBe('crumbify');
+
+    act(() => {
+      vi.advanceTimersByTime(960);
+    });
+    expect(result.current.state.top).toBe('crumbify');
+    // The queued Back now replays automatically.
+    act(() => {
+      vi.advanceTimersByTime(960);
+    });
+    expect(result.current.state.top).toBe('cv');
+  });
+
+  it('does not push a spurious history entry for a move that settles only to immediately replay a queued Back', () => {
+    const { result } = renderHook(() => usePile());
+    finishIntro(result);
+    const pushSpy = vi.spyOn(window.history, 'pushState');
+
+    act(() => {
+      result.current.bring('crumbify');
+    });
+    act(() => {
+      window.location.hash = '';
+      window.dispatchEvent(new HashChangeEvent('hashchange'));
+    });
+    act(() => {
+      vi.advanceTimersByTime(960);
+    });
+    // Only the queued Back's own eventual pushState (once it settles too),
+    // never one for the crumbify sheet it never really stayed on.
+    expect(pushSpy.mock.calls.every((call) => call[2] !== '/#crumbify')).toBe(true);
+  });
 });
