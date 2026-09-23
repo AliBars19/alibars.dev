@@ -392,4 +392,80 @@ test.describe('the pile', () => {
     await expect(link).toHaveAttribute('href', '/Ali_Bars_CV.pdf');
     await expect(link).toHaveAttribute('download', '');
   });
+
+  const INK = 'rgb(28, 27, 25)';
+
+  test('all 5 CV highlights (4 yellow + 1 purple) keep ink text colour at rest, on hover and on focus, and the background changes on hover (slice-cvcr4-01 / code-r4-02)', async ({
+    page,
+  }) => {
+    await page.goto('/#cv');
+    const highlightNames = [
+      /Founder & Lead Engineer/,
+      /Data Acquisition & Firmware Engineer/,
+      /Video Automation Pipeline/,
+      /motorsport \/ F1, music, esports/,
+      /Automated Publishing Platform/,
+    ];
+    for (const name of highlightNames) {
+      const link = page.getByRole('link', { name });
+      await expect(link).toBeVisible();
+      const restColor = await link.evaluate((el) => getComputedStyle(el).color);
+      const restBg = await link.evaluate((el) => getComputedStyle(el).backgroundColor);
+      expect(restColor).toBe(INK);
+
+      await link.hover();
+      const hoverColor = await link.evaluate((el) => getComputedStyle(el).color);
+      const hoverBg = await link.evaluate((el) => getComputedStyle(el).backgroundColor);
+      expect(hoverColor).toBe(INK);
+      expect(hoverBg).not.toBe(restBg);
+
+      await link.focus();
+      const focusColor = await link.evaluate((el) => getComputedStyle(el).color);
+      expect(focusColor).toBe(INK);
+
+      // Move off so the next highlight's rest state isn't polluted by a
+      // lingering :hover from this iteration.
+      await page.mouse.move(0, 0);
+    }
+  });
+
+  test('the sheet container keeps no visible outline after a keyboard-driven bring() settles (regression for slice-new-01 / code-r4-02)', async ({
+    page,
+  }) => {
+    await page.goto('/#cv');
+    const founderLink = page.getByRole('link', { name: /Founder & Lead Engineer/ });
+    await founderLink.focus();
+    await page.keyboard.press('Enter');
+    const sheet = page.locator('#sheet-crumbify');
+    await expect(sheet).toBeVisible();
+    // Wait for the move to settle (SETTLE_MS) so #sheet-crumbify is the
+    // element that actually received the programmatic focus() (usePile
+    // moves focus once bring() finishes).
+    await page.waitForTimeout(1000);
+    await expect(sheet).toBeFocused();
+    const outlineStyle = await page.evaluate(
+      () => getComputedStyle(document.activeElement as Element).outlineStyle
+    );
+    expect(outlineStyle).toBe('none');
+  });
+
+  test('under reduced motion, a sheet swap is a real cross-fade: the incoming sheet passes through a partial opacity instead of a hard cut (behaviour-03 / code-r4-01)', async ({
+    browser,
+  }) => {
+    const context = await browser.newContext({ reducedMotion: 'reduce' });
+    const page = await context.newPage();
+    await page.goto('/#cv');
+    await expect(page.getByRole('heading', { level: 1, name: 'Ali Bars' })).toBeVisible();
+    const incoming = page.locator('#sheet-crumbify');
+
+    await page.getByRole('button', { name: 'crumbify' }).click();
+    // Sample "about" 50ms after the click, mid-way through the 0.2s
+    // reduced-motion opacity transition (out at 0ms, in ~16ms later).
+    await page.waitForTimeout(50);
+    const opacity = Number(await incoming.evaluate((el) => getComputedStyle(el).opacity));
+
+    expect(opacity).toBeGreaterThan(0);
+    expect(opacity).toBeLessThan(1);
+    await context.close();
+  });
 });
