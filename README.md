@@ -29,8 +29,18 @@ npm run dev          # http://localhost:3000
 
 - `src/content.ts` — the single source of truth for all copy and URLs. Grep it for `TODO(ali)`
   to find every placeholder link still needed: the Crumbify App Store URL, and the GitHub repo
-  URLs for Crumbify, the video pipeline and the Automated Publishing Platform. Each renders as a
-  working, styled button/link with an `#TODO-...` href until filled in.
+  URLs for Crumbify, the video pipeline and the Automated Publishing Platform. Each URL is a
+  `#TODO-...` hash until filled in with the real one. Owner rule (fix round 4b): a CTA or link
+  whose URL is still a TODO placeholder does not render at all, rather than rendering as a dead
+  button/link. `src/lib/url.ts`'s `isPlaceholderUrl(href)` is the single place that recognises
+  the `#TODO-...` convention; replace a placeholder with the real URL in `src/content.ts` and the
+  element reappears automatically, with no other code change:
+  - Crumbify's "Get it on the App Store" and "View on GitHub" buttons each hide independently; if
+    both are still placeholders, the whole CTA row is omitted (no empty gap).
+  - The video page's "View the code on GitHub" button hides the same way.
+  - The CV's Automated Publishing Platform entry always keeps its title and stack line; while its
+    GitHub URL is a placeholder the title renders as plain text (no purple highlight, no GitHub
+    icon, no trailing arrow, not a link) instead of a dead link.
 - `src/lib/pile.ts` — pure pile logic (jitter, thickness, z-index table, hash routing), no React.
 - `src/lib/usePile.ts` — the phase machine (intro + bring/navigate) as a hook.
 - `src/components/` — Desk (header/theme), Pile (the stage), Tabs, TitlePage, StickyNote,
