@@ -10,7 +10,6 @@
   cursor: pointer;
   white-space: nowrap;
   flex: none;
-  transition: background 0.2s;
 }
 
 .pill:hover {

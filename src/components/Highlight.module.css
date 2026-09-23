@@ -30,4 +30,5 @@
 .purple:hover,
 .purple:focus-visible {
   background: var(--highlight-purple-hover);
+  color: inherit;
 }
