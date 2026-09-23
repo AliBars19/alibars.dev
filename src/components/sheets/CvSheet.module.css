@@ -131,6 +131,8 @@
   margin: 0;
 }
 
-.footer a {
+.footer a,
+.footer a:hover,
+.footer a:focus-visible {
   color: var(--ink);
 }

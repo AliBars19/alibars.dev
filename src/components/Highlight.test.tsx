@@ -64,4 +64,14 @@ describe('Highlight', () => {
     expect(hoverBlockMatch).not.toBeNull();
     expect(hoverBlockMatch?.[1]).toMatch(/color:\s*inherit/);
   });
+
+  it('keeps the yellow highlight text colour inherited on hover (regression for slice-cvcr3-01/code-r4-02; the purple test above did not cover this rule)', () => {
+    // Same specificity reasoning as the purple test: `.yellow:hover` must
+    // set color:inherit itself (0,2,0) so it beats a 3rd-party ink rule
+    // further up the cascade (e.g. `.footer a{color:var(--ink)}`, 0,1,1,
+    // fixed separately in CvSheet.module.css for slice-cvcr4-01).
+    const hoverBlockMatch = cssSource.match(/\.yellow:hover,\s*\n?\s*\.yellow:focus-visible\s*{([^}]*)}/);
+    expect(hoverBlockMatch).not.toBeNull();
+    expect(hoverBlockMatch?.[1]).toMatch(/color:\s*inherit/);
+  });
 });
