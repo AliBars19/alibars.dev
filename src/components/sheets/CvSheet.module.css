@@ -85,9 +85,19 @@
   font-style: italic;
 }
 
+.projectStack {
+  font-style: italic;
+  color: var(--muted);
+}
+
+.label {
+  font-weight: 600;
+}
+
 .bullets {
   margin: 0;
   padding-left: 18px;
+  list-style-type: disc;
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -96,6 +106,7 @@
 .modules {
   margin: 0;
   padding-left: 18px;
+  list-style-type: disc;
 }
 
 .skills {
@@ -118,4 +129,8 @@
   color: var(--muted);
   font-size: 11.5px;
   margin: 0;
+}
+
+.footer button {
+  color: var(--ink);
 }
