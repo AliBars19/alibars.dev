@@ -18,6 +18,7 @@
 .yellow:hover,
 .yellow:focus-visible {
   background: var(--highlight-yellow-hover);
+  color: inherit;
 }
 
 .purple {

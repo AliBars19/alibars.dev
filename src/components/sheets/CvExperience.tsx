@@ -12,7 +12,7 @@ export function CvExperience({ onOpen }: { onOpen: (id: SheetId) => void }) {
           <li key={entry.title} className={styles.entry}>
             <div className={styles.entryRow}>
               <span className={styles.entryTitle}>
-                <Highlight color="yellow" onOpen={() => onOpen(entry.opens)}>
+                <Highlight color="yellow" opens={entry.opens} onOpen={() => onOpen(entry.opens)}>
                   {entry.title}
                 </Highlight>
               </span>

@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { Highlight } from './Highlight';
@@ -11,7 +11,7 @@ describe('Highlight', () => {
   it('renders an internal highlight as an inline link (not a button, which forces a centred block) and calls onOpen on click', async () => {
     const onOpen = vi.fn();
     render(
-      <Highlight color="yellow" onOpen={onOpen}>
+      <Highlight color="yellow" opens="crumbify" onOpen={onOpen}>
         Founder & Lead Engineer
       </Highlight>
     );
@@ -19,6 +19,28 @@ describe('Highlight', () => {
     expect(link.tagName).toBe('A');
     await userEvent.click(link);
     expect(onOpen).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders a real per-sheet href, not "#", so middle-click / open-in-new-tab / copy-link resolve to the target sheet (cv-26 / behaviour-02)', () => {
+    render(
+      <Highlight color="yellow" opens="racing" onOpen={vi.fn()}>
+        City Racing
+      </Highlight>
+    );
+    const link = screen.getByRole('link', { name: /City Racing →/ });
+    expect(link).toHaveAttribute('href', '#racing');
+  });
+
+  it('does not intercept a modified or non-primary click, so it falls through to the real href', async () => {
+    const onOpen = vi.fn();
+    render(
+      <Highlight color="yellow" opens="video" onOpen={onOpen}>
+        Video bot
+      </Highlight>
+    );
+    const link = screen.getByRole('link', { name: /Video bot →/ });
+    fireEvent.click(link, { ctrlKey: true });
+    expect(onOpen).not.toHaveBeenCalled();
   });
 
   it('renders an external highlight as a link with target _blank, rel noopener noreferrer, and a trailing ↗', () => {

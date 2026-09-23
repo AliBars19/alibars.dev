@@ -14,7 +14,7 @@ export function CvProjects({ onOpen }: { onOpen: (id: SheetId) => void }) {
               <span>
                 <span className={styles.entryTitle}>
                   {'opens' in project ? (
-                    <Highlight color={project.highlight} onOpen={() => onOpen(project.opens)}>
+                    <Highlight color={project.highlight} opens={project.opens} onOpen={() => onOpen(project.opens)}>
                       {project.title}
                     </Highlight>
                   ) : (
