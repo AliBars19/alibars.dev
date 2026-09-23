@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
 import { sheetTitles } from '@/content';
 import { fillerSheets, sheetStyle, thickness, type SheetId } from '@/lib/pile';
+import { useFocusAfterIntro, useFocusOnTopChange } from '@/lib/usePileFocus';
 import { usePile } from '@/lib/usePile';
 import { SheetFrame } from './SheetFrame';
 import { StickyNote } from './StickyNote';
@@ -24,60 +24,12 @@ const THICKNESS = thickness(PILE_SIZE);
 // prototype: About, Video, Racing, Crumbify, CV.
 const SHEET_RENDER_ORDER: SheetId[] = ['about', 'video', 'racing', 'crumbify', 'cv'];
 
-/** How long to wait before reasserting document.title over Next's own static metadata title (see below). */
-const TITLE_REASSERT_MS = 100;
-
 export function Pile() {
   const { state, pull, bring, reducedMotion } = usePile();
   const { top, phase, moving, touched } = state;
-  const prevTopRef = useRef(top);
-  const prevPhaseRef = useRef(phase);
 
-  // After a bring() completes, the previous top sheet's content unmounts
-  // (SheetFrame only renders children when visible), which drops focus to
-  // <body>. Move it to the new top sheet's container so keyboard users
-  // continue from the page they just opened, instead of restarting at the
-  // top of the document.
-  useEffect(() => {
-    if (prevTopRef.current === top) return;
-    prevTopRef.current = top;
-    if (!touched || phase !== 'done') return;
-    if (document.activeElement !== document.body) return;
-    document.getElementById(`sheet-${top}`)?.focus({ preventScroll: true });
-  }, [top, touched, phase]);
-
-  // A React-rendered <title> (React 19 hoists it into <head>) can never
-  // win here: Next's static `metadata` title is *also* a real <title> node,
-  // already present in the initial HTML, so it's always first in document
-  // order and `document.title` always resolves to the first node regardless
-  // of when ours mounts. An imperative write instead mutates that first
-  // node's own text directly (per the HTML title-setter algorithm), so it
-  // wins immediately; but Next resolves and reasserts its own static
-  // metadata title once more, ~50-100ms after this effect first runs, so a
-  // single write alone gets clobbered again. The delayed re-write reasserts
-  // after that happens (slice-gpi-02 / behaviour-02).
-  useEffect(() => {
-    if (phase !== 'done') return;
-    const wanted = sheetTitles[top];
-    document.title = wanted;
-    const id = setTimeout(() => {
-      document.title = wanted;
-    }, TITLE_REASSERT_MS);
-    return () => clearTimeout(id);
-  }, [top, phase]);
-
-  // Dismissing the title page (click or Enter/Space) unmounts it while it
-  // still has focus, so the next Tab would otherwise start at <body> and
-  // skip straight to the divider tabs, past the whole CV. Move focus onto
-  // the revealed sheet's container (tabIndex=-1, see SheetFrame) the moment
-  // the intro's 'pull' stage finishes.
-  useEffect(() => {
-    const prevPhase = prevPhaseRef.current;
-    prevPhaseRef.current = phase;
-    if (prevPhase !== 'pull' || phase !== 'done') return;
-    if (document.activeElement !== document.body) return;
-    document.getElementById(`sheet-${top}`)?.focus({ preventScroll: true });
-  }, [phase, top]);
+  useFocusOnTopChange(top, touched, phase);
+  useFocusAfterIntro(phase, top);
 
   const showIntro = phase !== 'done';
   const pileTransform = phase === 'off' ? 'translateX(-130vw)' : 'translateX(0)';
@@ -86,8 +38,14 @@ export function Pile() {
 
   return (
     <main className={styles.main}>
+      {/* React 19 hoists this into <head>; it is the only <title> node in
+          the document (layout.tsx's static metadata carries no `title`), so
+          nothing else can ever clobber it, at any CPU speed (slice-gpi-02 /
+          behaviour-02 and duplicates). Before the intro finishes this
+          renders the same 'Ali Bars' the static HTML already had. */}
+      <title>{phase === 'done' ? sheetTitles[top] : 'Ali Bars'}</title>
       <div className={styles.stageWrap}>
-        {showTabs ? <Tabs top={top} moving={moving} onSelect={bring} variant="mobile" /> : null}
+        <Tabs top={top} moving={moving} onSelect={bring} variant="mobile" hidden={showIntro} />
         <div className={`${styles.stage} js-stage`} style={{ transform: pileTransform }}>
           <div className={styles.thickness} style={{ transform: `translate(5px, ${THICKNESS}px)` }} />
           {FILLERS.map((f) => (
