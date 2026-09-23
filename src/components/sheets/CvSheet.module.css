@@ -131,6 +131,6 @@
   margin: 0;
 }
 
-.footer button {
+.footer a {
   color: var(--ink);
 }

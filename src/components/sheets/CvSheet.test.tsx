@@ -33,7 +33,7 @@ describe('CvSheet', () => {
   it('the City Racing entry ends July 2026 and has exactly two bullets, with no csg.racing bullet', () => {
     render(<CvSheet onOpen={() => {}} />);
     expect(screen.getByText('Aug. 2025 – July 2026')).toBeInTheDocument();
-    const racingHeading = screen.getByRole('button', { name: /Data Acquisition & Firmware Engineer/ });
+    const racingHeading = screen.getByRole('link', { name: /Data Acquisition & Firmware Engineer/ });
     const entry = racingHeading.closest('li');
     expect(entry).not.toBeNull();
     const bullets = within(entry as HTMLElement).getAllByRole('listitem');
@@ -44,13 +44,13 @@ describe('CvSheet', () => {
   it('experience highlight buttons call onOpen with the right sheet id', async () => {
     const onOpen = vi.fn();
     render(<CvSheet onOpen={onOpen} />);
-    await userEvent.click(screen.getByRole('button', { name: /Founder & Lead Engineer/ }));
+    await userEvent.click(screen.getByRole('link', { name: /Founder & Lead Engineer/ }));
     expect(onOpen).toHaveBeenCalledWith('crumbify');
-    await userEvent.click(screen.getByRole('button', { name: /Data Acquisition & Firmware Engineer/ }));
+    await userEvent.click(screen.getByRole('link', { name: /Data Acquisition & Firmware Engineer/ }));
     expect(onOpen).toHaveBeenCalledWith('racing');
-    await userEvent.click(screen.getByRole('button', { name: /Video Automation Pipeline/ }));
+    await userEvent.click(screen.getByRole('link', { name: /Video Automation Pipeline/ }));
     expect(onOpen).toHaveBeenCalledWith('video');
-    await userEvent.click(screen.getByRole('button', { name: /motorsport/ }));
+    await userEvent.click(screen.getByRole('link', { name: /motorsport/ }));
     expect(onOpen).toHaveBeenCalledWith('about');
   });
 
@@ -74,7 +74,7 @@ describe('CvSheet', () => {
 
   it('project stack text sits as a sibling of the highlight span, not nested inside its 600/13.5px title span (slice-cv-01)', () => {
     render(<CvSheet onOpen={() => {}} />);
-    const link = screen.getByRole('button', { name: /Video Automation Pipeline/ });
+    const link = screen.getByRole('link', { name: /Video Automation Pipeline/ });
     const titleSpan = link.closest(`.${styles.entryTitle}`);
     expect(titleSpan).not.toBeNull();
     const stackSpan = screen.getByText(/\| Python, ffmpeg/);
@@ -93,7 +93,7 @@ describe('CvSheet', () => {
   });
 
   it('footer highlight stays #1c1b19 (ink), not the muted footer text colour (slice-cv-04)', () => {
-    const footerBlock = cssSource.match(/\.footer\s+button\s*{([^}]*)}/);
+    const footerBlock = cssSource.match(/\.footer\s+a\s*{([^}]*)}/);
     expect(footerBlock).not.toBeNull();
     expect(footerBlock?.[1]).toMatch(/color:\s*var\(--ink\)/);
   });

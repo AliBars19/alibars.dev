@@ -8,15 +8,16 @@ import { Highlight } from './Highlight';
 const cssSource = readFileSync(join(process.cwd(), 'src/components/Highlight.module.css'), 'utf-8');
 
 describe('Highlight', () => {
-  it('renders an internal highlight as a real button with a trailing arrow, and calls onOpen on click', async () => {
+  it('renders an internal highlight as an inline link (not a button, which forces a centred block) and calls onOpen on click', async () => {
     const onOpen = vi.fn();
     render(
       <Highlight color="yellow" onOpen={onOpen}>
         Founder & Lead Engineer
       </Highlight>
     );
-    const btn = screen.getByRole('button', { name: /Founder & Lead Engineer →/ });
-    await userEvent.click(btn);
+    const link = screen.getByRole('link', { name: /Founder & Lead Engineer →/ });
+    expect(link.tagName).toBe('A');
+    await userEvent.click(link);
     expect(onOpen).toHaveBeenCalledTimes(1);
   });
 
