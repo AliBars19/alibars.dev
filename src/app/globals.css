@@ -1,0 +1,114 @@
+:root {
+  --paper: #fbfaf6;
+  --paper-alt-1: #f6f3ec;
+  --paper-alt-2: #f1ede3;
+  --paper-alt-3: #f8f6f0;
+  --paper-alt-4: #eeeadf;
+  --ink: #1c1b19;
+  --muted: #5f5b54;
+  --faint: #8a857c;
+  --rule: #d8d4cc;
+  --row-rule: #e0dbd0;
+  --desk-light: #d3ccbf;
+  --desk-dark: radial-gradient(ellipse at 50% 0%, #34302b 0%, #161513 70%);
+  --desk-ink-dark: #e8e4dc;
+  --link-hover: #8a5a00;
+  --sticky: #fff3a8;
+  --tape: rgba(240, 232, 200, 0.8);
+  --pill-hover: #f0ede4;
+  --github-bg: #24292f;
+  --github-hover: #3a4048;
+  --appstore-bg: #1c1b19;
+  --appstore-hover: #3a3833;
+  --highlight-yellow: linear-gradient(
+    100deg,
+    rgba(255, 221, 64, 0) 1%,
+    rgba(255, 221, 64, 0.85) 3%,
+    rgba(255, 221, 64, 0.55) 60%,
+    rgba(255, 221, 64, 0.8) 97%,
+    rgba(255, 221, 64, 0) 99%
+  );
+  --highlight-yellow-hover: rgba(255, 196, 40, 0.95);
+  --highlight-purple: linear-gradient(
+    100deg,
+    rgba(186, 160, 255, 0) 1%,
+    rgba(186, 160, 255, 0.8) 3%,
+    rgba(186, 160, 255, 0.5) 60%,
+    rgba(186, 160, 255, 0.75) 97%,
+    rgba(186, 160, 255, 0) 99%
+  );
+  --highlight-purple-hover: rgba(160, 125, 250, 0.9);
+  --desk-bg: var(--desk-light);
+  --desk-ink: var(--ink);
+  --font-sans: var(--font-plex-sans), 'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), 'IBM Plex Mono', monospace;
+  --font-serif: var(--font-source-serif), 'Source Serif 4', Georgia, serif;
+}
+
+:root[data-desk='dark'] {
+  --desk-bg: var(--desk-dark);
+  --desk-ink: var(--desk-ink-dark);
+}
+
+/* Pre-hydration intro skip (deep link / reduced motion): avoids a flash of
+   the title page or the off-screen pile before React's matching state takes
+   over. See the inline script in app/layout.tsx. */
+:root[data-intro='skip'] .js-stage {
+  transform: translateX(0) !important;
+}
+:root[data-intro='skip'] .js-title-page {
+  display: none !important;
+}
+:root[data-intro='skip'] .js-tabs {
+  opacity: 1 !important;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+body {
+  min-height: 100vh;
+  overflow-x: hidden;
+  background: var(--desk-bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  transition: background 0.5s;
+}
+
+a {
+  color: var(--ink);
+  text-underline-offset: 3px;
+}
+
+a:hover {
+  color: var(--link-hover);
+}
+
+button {
+  font-family: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+[data-desk='dark'] :focus-visible {
+  outline-color: var(--desk-ink-dark);
+}

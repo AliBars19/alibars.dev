@@ -1,0 +1,18 @@
+.pill {
+  font: inherit;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink);
+  background: none;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  padding: 6px 14px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex: none;
+  transition: background 0.2s;
+}
+
+.pill:hover {
+  background: var(--pill-hover);
+}

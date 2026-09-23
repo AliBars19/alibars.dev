@@ -1,0 +1,33 @@
+@keyframes noteIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px) rotate(8deg);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) rotate(4deg);
+  }
+}
+
+.note {
+  position: absolute;
+  top: -22px;
+  right: 28px;
+  z-index: 90;
+  width: 210px;
+  background: var(--sticky);
+  color: var(--ink);
+  padding: 18px 18px 20px;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.2);
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  line-height: 1.55;
+  animation: noteIn 0.6s both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .note {
+    animation: none;
+    transform: rotate(4deg);
+  }
+}
