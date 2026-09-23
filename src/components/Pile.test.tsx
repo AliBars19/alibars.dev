@@ -96,6 +96,28 @@ describe('Pile', () => {
     expect(screen.queryByText(/psst: click anything highlighted/)).not.toBeInTheDocument();
   });
 
+  it('sets document.title to match a deep-linked sheet', () => {
+    window.history.replaceState(null, '', '/#racing');
+    render(<Pile />);
+    expect(document.title).toBe('City Racing · Ali Bars');
+  });
+
+  it('moves focus to the CV sheet after dismissing the title page with the keyboard', () => {
+    render(<Pile />);
+    act(() => {
+      vi.advanceTimersByTime(120);
+    });
+    const titlePage = screen.getByRole('button', { name: /click to open/ });
+    titlePage.focus();
+    act(() => {
+      fireEvent.keyDown(titlePage, { key: 'Enter' });
+    });
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+    expect(document.activeElement?.id).toBe('sheet-cv');
+  });
+
   it('renders one desktop Tabs instance inside the stage (same stacking context as the sheets)', () => {
     window.history.replaceState(null, '', '/#cv');
     render(<Pile />);
