@@ -1,4 +1,4 @@
-.tabs {
+.tabsDesktop {
   position: absolute;
   top: 0;
   right: 0;
@@ -22,33 +22,48 @@
   writing-mode: vertical-rl;
   color: var(--ink);
   cursor: pointer;
+  transform: translateX(-6px);
   transition: transform 0.2s;
 }
 
-.tab:hover {
+.tab.active {
+  transform: translateX(0);
+}
+
+.tab:hover,
+.tab.active:hover {
   transform: translateX(3px);
 }
 
+.tabsMobile {
+  display: none;
+}
+
 @media (max-width: 599px) {
-  .tabs {
-    position: static;
+  .tabsDesktop {
+    display: none;
+  }
+
+  .tabsMobile {
     display: flex;
     flex-direction: row;
+    flex-wrap: wrap;
     gap: 8px;
     width: 100%;
     margin-bottom: 12px;
   }
 
-  .tab {
-    position: static;
-    writing-mode: horizontal-tb;
-    width: auto;
-    height: auto;
-    padding: 6px 12px;
+  .tabMobile {
+    border: 0;
     border-radius: 999px;
-  }
-
-  .tab:hover {
-    transform: none;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.14);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: var(--ink);
+    cursor: pointer;
+    padding: 6px 12px;
   }
 }

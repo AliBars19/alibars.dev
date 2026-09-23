@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { sheetTitles } from '@/content';
 import { fillerSheets, sheetStyle, thickness, type SheetId } from '@/lib/pile';
 import { usePile } from '@/lib/usePile';
@@ -25,12 +25,26 @@ const THICKNESS = thickness(PILE_SIZE);
 const SHEET_RENDER_ORDER: SheetId[] = ['about', 'video', 'racing', 'crumbify', 'cv'];
 
 export function Pile() {
-  const { state, pull, bring } = usePile();
+  const { state, pull, bring, reducedMotion } = usePile();
   const { top, phase, moving, touched } = state;
+  const prevTopRef = useRef(top);
 
   useEffect(() => {
     if (phase === 'done') document.title = sheetTitles[top];
   }, [top, phase]);
+
+  // After a bring() completes, the previous top sheet's content unmounts
+  // (SheetFrame only renders children when visible), which drops focus to
+  // <body>. Move it to the new top sheet's container so keyboard users
+  // continue from the page they just opened, instead of restarting at the
+  // top of the document.
+  useEffect(() => {
+    if (prevTopRef.current === top) return;
+    prevTopRef.current = top;
+    if (!touched || phase !== 'done') return;
+    if (document.activeElement !== document.body) return;
+    document.getElementById(`sheet-${top}`)?.focus({ preventScroll: true });
+  }, [top, touched, phase]);
 
   const showIntro = phase !== 'done';
   const pileTransform = phase === 'off' ? 'translateX(-130vw)' : 'translateX(0)';
@@ -40,7 +54,7 @@ export function Pile() {
   return (
     <main className={styles.main}>
       <div className={styles.stageWrap}>
-        {showTabs ? <Tabs top={top} moving={moving} onSelect={bring} zIndex={M + 1} /> : null}
+        {showTabs ? <Tabs top={top} moving={moving} onSelect={bring} variant="mobile" /> : null}
         <div className={`${styles.stage} js-stage`} style={{ transform: pileTransform }}>
           <div className={styles.thickness} style={{ transform: `translate(5px, ${THICKNESS}px)` }} />
           {FILLERS.map((f) => (
@@ -48,9 +62,9 @@ export function Pile() {
           ))}
 
           {SHEET_RENDER_ORDER.map((id) => {
-            const style = sheetStyle(id, { top, moving }, M);
+            const style = sheetStyle(id, { top, moving }, M, reducedMotion);
             return (
-              <SheetFrame key={id} id={id} style={style} cv={id === 'cv'}>
+              <SheetFrame key={id} id={id} style={style} cv={id === 'cv'} inert={showIntro}>
                 {id === 'cv' ? <CvSheet onOpen={bring} /> : null}
                 {id === 'crumbify' ? <CrumbifySheet onBack={() => bring('cv')} /> : null}
                 {id === 'racing' ? <RacingSheet onBack={() => bring('cv')} /> : null}
@@ -60,6 +74,7 @@ export function Pile() {
             );
           })}
 
+          {showTabs ? <Tabs top={top} moving={moving} onSelect={bring} zIndex={M + 1} variant="desktop" /> : null}
           {showIntro ? (
             <TitlePage pulling={phase === 'pull'} zIndex={M + 10} onDismiss={pull} />
           ) : null}
