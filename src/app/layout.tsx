@@ -54,12 +54,12 @@ const preHydrationScript = `(function(){try{
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en-GB">
+    <html lang="en-GB" className={`${plexSans.variable} ${plexMono.variable} ${sourceSerif.variable}`}>
       <head>
         <link rel="icon" href="/icon.svg" type="image/svg+xml" />
         <script dangerouslySetInnerHTML={{ __html: preHydrationScript }} />
       </head>
-      <body className={`${plexSans.variable} ${plexMono.variable} ${sourceSerif.variable}`}>{children}</body>
+      <body>{children}</body>
     </html>
   );
 }

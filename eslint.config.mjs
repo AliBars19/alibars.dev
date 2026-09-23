@@ -6,6 +6,7 @@ const eslintConfig = [
   ...compat.extends('next/core-web-vitals', 'next/typescript'),
   {
     ignores: [
+      'next-env.d.ts',
       'node_modules/**',
       '.next/**',
       'out/**',
