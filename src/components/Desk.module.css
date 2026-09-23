@@ -11,6 +11,14 @@
   transition: color 0.5s;
 }
 
+/* Only this desk-level header gets the light outline in dark mode; controls
+   on paper sheets (which also happen to sit in a <header>, e.g. CvHeader)
+   keep the global dark #1c1b19 outline, since sheets stay light-paper
+   coloured regardless of the desk theme (gl-24 / round-2 slice-cvcr-01). */
+:global([data-desk='dark']) .header :focus-visible {
+  outline-color: var(--desk-ink-dark);
+}
+
 .brand {
   font-family: var(--font-mono);
   margin-right: auto;
@@ -35,4 +43,14 @@
   cursor: pointer;
   opacity: 0.8;
   white-space: nowrap;
+}
+
+/* Exactly one label is shown, keyed off :root[data-desk] rather than React
+   state, so the correct one is already visible on the very first paint. */
+:global(:root[data-desk='dark']) .labelLight {
+  display: none;
+}
+
+:global(:root:not([data-desk='dark'])) .labelDark {
+  display: none;
 }

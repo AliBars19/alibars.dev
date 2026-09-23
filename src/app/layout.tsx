@@ -36,20 +36,30 @@ export const metadata: Metadata = {
   },
 };
 
-// Pre-hydration script: avoids a flash of the wrong theme and a flash of the
-// title page on a deep link. Runs before React hydrates and paints, so it
-// sets data attributes on <html> that CSS in globals.css reacts to
-// synchronously; React's own state (computed from the same signals) then
-// matches on hydration with no visible change.
+// Pre-hydration script: avoids a flash of the wrong theme, a flash of the
+// title page on a deep link, and (via data-top) a flash of the CV sheet
+// before a non-CV deep link's own sheet paints. Runs before React hydrates
+// and paints, so it sets data attributes on <html> that CSS in globals.css
+// reacts to synchronously; React's own state (computed from the same
+// signals) then matches on hydration with no visible change.
+//
+// localStorage.getItem is wrapped in its own inner try: when storage is
+// blocked (e.g. a SecurityError from blocked site data), that alone must
+// not abort the rest of the script, or an OS-dark visitor gets the light
+// desk and a deep link flashes the title page for the whole load (gl-28).
+const KNOWN_SHEET_IDS = ['cv', 'crumbify', 'racing', 'video', 'about'];
 const preHydrationScript = `(function(){try{
   var d=document.documentElement;
-  var stored=localStorage.getItem('alibars-desk');
+  var stored=null;
+  try{stored=localStorage.getItem('alibars-desk');}catch(e){}
   var dark=stored?stored==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches;
   d.setAttribute('data-desk',dark?'dark':'light');
   var hash=(window.location.hash||'').replace('#','');
   var reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var skip=['cv','crumbify','racing','video','about'].indexOf(hash)!==-1 || reduced;
+  var known=${JSON.stringify(KNOWN_SHEET_IDS)};
+  var skip=known.indexOf(hash)!==-1 || reduced;
   d.setAttribute('data-intro',skip?'skip':'play');
+  if(known.indexOf(hash)!==-1 && hash!=='cv'){d.setAttribute('data-top',hash);}
 }catch(e){}})();`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -60,7 +70,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       suppressHydrationWarning
     >
       <head>
-        <link rel="icon" href="/icon.svg" type="image/svg+xml" />
         <script dangerouslySetInnerHTML={{ __html: preHydrationScript }} />
       </head>
       <body>{children}</body>

@@ -59,8 +59,13 @@
 :root[data-intro='skip'] .js-title-page {
   display: none !important;
 }
-:root[data-intro='skip'] .js-tabs {
-  opacity: 1 !important;
+
+/* A non-CV deep link (data-top set by the pre-hydration script) must not
+   paint the CV sheet for the single frame before React hydrates and its own
+   state takes over (slice-gpi-03). usePile's mount effect removes data-top
+   once that's done, making this rule moot afterwards. */
+:root[data-intro='skip'][data-top]:not([data-top='cv']) #sheet-cv {
+  visibility: hidden;
 }
 
 * {
@@ -110,9 +115,3 @@ button {
   outline-offset: 2px;
 }
 
-/* Only desk-level controls (the header) get the light outline in dark mode;
-   controls on paper sheets keep the dark #1c1b19 outline (gl-24), since
-   sheets stay light-paper coloured regardless of the desk theme. */
-[data-desk='dark'] header :focus-visible {
-  outline-color: var(--desk-ink-dark);
-}

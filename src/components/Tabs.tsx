@@ -18,9 +18,9 @@ const TAB_TOP_OFFSET = 48;
 const TAB_PITCH = 120;
 
 /**
- * Two DOM instances, one CSS-scoped visible per breakpoint (globals.css'
- * `[data-intro='skip'] .js-tabs` rule, and this module's own media queries,
- * target both by their shared `js-tabs` class). The 'desktop' instance is a
+ * Two DOM instances, one CSS-scoped visible per breakpoint (this module's
+ * own media queries target both by their shared `js-tabs` class). The
+ * 'desktop' instance is a
  * child of the stage grid so its z-index competes with the sheets in the
  * same stacking context (tucked under the top sheet's edge); the 'mobile'
  * instance stays a flow sibling above the stage so it can push it down.
