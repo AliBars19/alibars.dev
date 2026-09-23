@@ -9,9 +9,9 @@ import styles from './Desk.module.css';
  * whichever one doesn't match `[data-desk]` on `<html>`. `<html>`'s
  * attribute is set by the pre-hydration script before first paint (see
  * layout.tsx), so a dark-OS visitor sees the correct "Lights on" label
- * immediately, instead of the "Lights off" default until React's
- * useLayoutEffect (slice-gpi-04) runs. `useTheme`'s own `label` isn't used
- * here for that reason; `toggle` still drives both the attribute and state.
+ * immediately, with no client-side flash. `useTheme` has no `label`/`dark`
+ * state of its own for the same reason: `data-desk` on <html> is the single
+ * source of truth, and `toggle` is the only thing this component needs.
  */
 export function Desk() {
   const { toggle } = useTheme();

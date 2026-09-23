@@ -12,34 +12,27 @@ describe('useTheme', () => {
     vi.restoreAllMocks();
   });
 
-  it('reads the initial value from the data-desk attribute set by the pre-hydration script', () => {
-    document.documentElement.setAttribute('data-desk', 'dark');
-    const { result } = renderHook(() => useTheme());
-    expect(result.current.dark).toBe(true);
-    expect(result.current.label).toBe('Lights on');
-  });
-
-  it('defaults to light (label "Lights off") with no attribute set', () => {
-    const { result } = renderHook(() => useTheme());
-    expect(result.current.dark).toBe(false);
-    expect(result.current.label).toBe('Lights off');
-  });
-
-  it('toggle flips dark and persists to localStorage and the data-desk attribute', () => {
+  it('toggle flips the data-desk attribute from its current value and persists to localStorage', () => {
     const { result } = renderHook(() => useTheme());
     act(() => {
       result.current.toggle();
     });
-    expect(result.current.dark).toBe(true);
-    expect(result.current.label).toBe('Lights on');
-    expect(localStorage.getItem('alibars-desk')).toBe('dark');
     expect(document.documentElement.getAttribute('data-desk')).toBe('dark');
+    expect(localStorage.getItem('alibars-desk')).toBe('dark');
 
     act(() => {
       result.current.toggle();
     });
-    expect(result.current.dark).toBe(false);
+    expect(document.documentElement.getAttribute('data-desk')).toBe('light');
     expect(localStorage.getItem('alibars-desk')).toBe('light');
+  });
+
+  it('treats no attribute as light, so the first toggle turns the desk dark', () => {
+    const { result } = renderHook(() => useTheme());
+    act(() => {
+      result.current.toggle();
+    });
+    expect(document.documentElement.getAttribute('data-desk')).toBe('dark');
   });
 
   it('still flips the desk when localStorage.setItem throws (e.g. blocked/full storage)', () => {
@@ -54,8 +47,6 @@ describe('useTheme', () => {
       });
     }).not.toThrow();
 
-    expect(result.current.dark).toBe(true);
-    expect(result.current.label).toBe('Lights on');
     expect(document.documentElement.getAttribute('data-desk')).toBe('dark');
     setItemSpy.mockRestore();
   });
