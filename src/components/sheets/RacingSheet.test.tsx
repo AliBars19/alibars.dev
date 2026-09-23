@@ -1,7 +1,12 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
+import { racing } from '@/content';
 import { RacingSheet } from './RacingSheet';
+
+const cssSource = readFileSync(join(process.cwd(), 'src/components/sheets/RacingSheet.module.css'), 'utf-8');
 
 describe('RacingSheet', () => {
   it('renders the heading, date, telemetry/GPS copy and the csg.racing link', () => {
@@ -15,11 +20,11 @@ describe('RacingSheet', () => {
     expect(document.body.textContent).not.toContain('—');
   });
 
-  it('applies the reference GPS crop scale (1.8) via object-position + scale so the frame always stays covered', () => {
+  it('applies the content-sourced GPS crop scale + objectPosition (no hardcoded magic string, code-13)', () => {
     render(<RacingSheet onBack={() => {}} />);
     const img = screen.getByAltText('GPS lap trace overlaid on the FSUK circuit map');
-    expect(img).toHaveStyle({ transform: 'scale(1.8)' });
-    expect(img.style.objectPosition).not.toBe('');
+    expect(img).toHaveStyle({ transform: `scale(${racing.gps.imageCrop.scale})` });
+    expect(img.style.objectPosition).toBe(racing.gps.imageCrop.objectPosition);
   });
 
   it('back pill calls onBack', async () => {
@@ -27,5 +32,11 @@ describe('RacingSheet', () => {
     render(<RacingSheet onBack={onBack} />);
     await userEvent.click(screen.getByRole('button', { name: '← back to CV' }));
     expect(onBack).toHaveBeenCalledTimes(1);
+  });
+
+  it('telemetry/GPS paragraphs have text-wrap: pretty (slice-text-wrap-pretty-missing)', () => {
+    const block = cssSource.match(/\.paragraph\s*{([^}]*)}/);
+    expect(block).not.toBeNull();
+    expect(block?.[1]).toMatch(/text-wrap:\s*pretty/);
   });
 });

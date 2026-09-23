@@ -40,12 +40,26 @@ describe('content', () => {
 
   it('marks unknown URLs with a TODO placeholder', () => {
     const project = cv.projects.find((p) => p.title === 'Automated Publishing Platform');
-    expect(project?.href).toMatch(/^#TODO-/);
+    expect(project && 'href' in project ? project.href : undefined).toMatch(/^#TODO-/);
     expect(crumbify.ctas[0]?.href).toMatch(/^#TODO-/);
     expect(video.cta.href).toMatch(/^#TODO-/);
   });
 
   it('has exactly 5 tabs matching the sheet ids', () => {
     expect(tabs.map((t) => t.id)).toEqual(['cv', 'crumbify', 'racing', 'video', 'about']);
+  });
+
+  it('every project entry has exactly one of opens or href (discriminated union contract, code-14)', () => {
+    for (const project of cv.projects) {
+      const hasOpens = 'opens' in project && project.opens !== undefined;
+      const hasHref = 'href' in project && project.href !== undefined;
+      expect(hasOpens).not.toBe(hasHref);
+    }
+  });
+
+  it('racing GPS crop carries a named objectPosition value, no dead x/y offset fields (code-13)', () => {
+    expect(racing.gps.imageCrop).toEqual({ scale: 1.8, objectPosition: '58% 22%' });
+    expect(racing.gps.imageCrop).not.toHaveProperty('x');
+    expect(racing.gps.imageCrop).not.toHaveProperty('y');
   });
 });

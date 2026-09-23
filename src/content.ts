@@ -32,16 +32,22 @@ export type ExperienceEntry = {
   bullets: string[];
 };
 
-export type ProjectEntry = {
+type ProjectEntryBase = {
   title: string;
-  opens?: SheetId;
-  href?: string;
   highlight: 'yellow' | 'purple';
-  icon?: 'github';
   stack: string;
   year: string;
   bullets: string[];
 };
+
+// A plain intersection of Base & (A | B) loses discriminated-union narrowing
+// for the 'in' operator in some TS control-flow positions (closures,
+// straight-line narrowing of an optional-never branch); a union of two full
+// intersections narrows reliably instead.
+type InternalProject = ProjectEntryBase & { opens: SheetId };
+type ExternalProject = ProjectEntryBase & { href: string; icon?: 'github' };
+
+export type ProjectEntry = InternalProject | ExternalProject;
 
 export type SkillGroup = { label: string; items: string };
 
@@ -69,6 +75,39 @@ export const tabs: Tab[] = [
   { id: 'racing', label: 'racing', color: '#cfe3c9' },
   { id: 'video', label: 'video bot', color: '#f2cdbf' },
   { id: 'about', label: 'about', color: '#cdd9ef' },
+];
+
+// Declared separately with an explicit `: ProjectEntry[]` annotation, not
+// `satisfies`: for a discriminated union, `satisfies` infers the array's own
+// homogenised literal type (every field optional across all elements) rather
+// than checking each element against the union, which then breaks `'opens'
+// in project` narrowing (including inside closures) wherever this is read.
+// See docs/implementation-notes.md.
+const projects: ProjectEntry[] = [
+  {
+    title: 'Video Automation Pipeline',
+    opens: 'video',
+    highlight: 'yellow',
+    stack: 'Python, ffmpeg, OpenAI Whisper, JSX, AWS EC2',
+    year: '2025',
+    bullets: [
+      'Built a batch pipeline processing 50+ audio jobs per run: ffmpeg extraction and trimming, dominant-colour analysis, and Whisper transcription producing word-level timestamps.',
+      'Scripted Adobe After Effects via JSX to assemble templated compositions, apply colour grading, sync timed lyrics and queue 12+ renders per run on AWS EC2, removing the manual editing step entirely.',
+      'This pipeline results in a TikTok page totaling 25K followers, 7.1M likes and 60M+ views in total.',
+    ],
+  },
+  {
+    title: 'Automated Publishing Platform',
+    // TODO(ali): GitHub repo URL for the Automated Publishing Platform.
+    href: '#TODO-automated-publishing-platform-github',
+    highlight: 'purple',
+    icon: 'github',
+    stack: 'Next.js, TypeScript, OAuth',
+    year: '2025',
+    bullets: [
+      'Next.js service that schedules and publishes to TikTok and YouTube through OAuth-integrated APIs, parsing filenames into per-platform metadata and tracking publish state across both.',
+    ],
+  },
 ];
 
 export const cv = {
@@ -129,32 +168,7 @@ export const cv = {
       ],
     },
   ] satisfies ExperienceEntry[],
-  projects: [
-    {
-      title: 'Video Automation Pipeline',
-      opens: 'video',
-      highlight: 'yellow',
-      stack: 'Python, ffmpeg, OpenAI Whisper, JSX, AWS EC2',
-      year: '2025',
-      bullets: [
-        'Built a batch pipeline processing 50+ audio jobs per run: ffmpeg extraction and trimming, dominant-colour analysis, and Whisper transcription producing word-level timestamps.',
-        'Scripted Adobe After Effects via JSX to assemble templated compositions, apply colour grading, sync timed lyrics and queue 12+ renders per run on AWS EC2, removing the manual editing step entirely.',
-        'This pipeline results in a TikTok page totaling 25K followers, 7.1M likes and 60M+ views in total.',
-      ],
-    },
-    {
-      title: 'Automated Publishing Platform',
-      // TODO(ali): GitHub repo URL for the Automated Publishing Platform.
-      href: '#TODO-automated-publishing-platform-github',
-      highlight: 'purple',
-      icon: 'github',
-      stack: 'Next.js, TypeScript, OAuth',
-      year: '2025',
-      bullets: [
-        'Next.js service that schedules and publishes to TikTok and YouTube through OAuth-integrated APIs, parsing filenames into per-platform metadata and tracking publish state across both.',
-      ],
-    },
-  ] satisfies ProjectEntry[],
+  projects,
   skills: [
     { label: 'Languages', items: 'Python, Java, TypeScript, JavaScript, C++, SQL, C#, Go' },
     {
@@ -221,8 +235,15 @@ export const racing = {
     lead: 'GPS lap tool (C++).',
     text: 'Projects logged GPS points onto satellite maps of the FSUK circuit, so you can see exactly where the simulated lap and the real one split.',
     image: '/images/cv-racing-gps.webp',
-    // From reference/.image-slots.state.json: scale 1.8, offset x +18%, y +50%.
-    imageCrop: { scale: 1.8, x: 18, y: 50 },
+    // The reference stores this crop as scale 1.8 / offset x +18% / y +50%
+    // (design_handoff .../reference/.image-slots.state.json), a pan applied on
+    // top of an object-fit:cover baseline. That literal offset doesn't
+    // translate 1:1 through object-fit:cover on our copy of the (low-res,
+    // to-be-replaced) source asset, so objectPosition below reproduces the
+    // reference's *intent* (zoom into the on-screen map, centred on the GPS
+    // track) instead of the literal x/y pan values. See
+    // docs/implementation-notes.md deviations log.
+    imageCrop: { scale: 1.8, objectPosition: '58% 22%' },
   },
   website: { prefix: "Here's the team website →", label: 'csg.racing', href: 'https://csg.racing' },
 };
