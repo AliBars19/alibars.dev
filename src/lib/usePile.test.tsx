@@ -266,7 +266,7 @@ describe('usePile', () => {
     expect(result.current.state.top).toBe('cv');
   });
 
-  it('under reduced motion, bring() cross-fades in immediately (no "out" stage) and settles at 200ms', () => {
+  it('under reduced motion, bring() starts invisible ("out", opacity 0 per sheetStyle) then cross-fades to "in" one frame later, settling at 216ms (behaviour-03)', () => {
     vi.spyOn(window, 'matchMedia').mockImplementation(
       (query: string) =>
         ({
@@ -282,10 +282,16 @@ describe('usePile', () => {
     act(() => {
       result.current.bring('crumbify');
     });
-    // No 440ms-invisible "out" stage: the incoming sheet is opaque from the
-    // very first tick.
-    expect(result.current.state.moving).toEqual({ k: 'crumbify', prev: 'cv', stage: 'in' });
+    // Starts at "out" (invisible via opacity, not off-screen, under reduced
+    // motion) so the switch to "in" below is a real opacity transition, not
+    // a same-commit no-op.
+    expect(result.current.state.moving).toEqual({ k: 'crumbify', prev: 'cv', stage: 'out' });
     expect(result.current.state.top).toBe('cv');
+
+    act(() => {
+      vi.advanceTimersByTime(16);
+    });
+    expect(result.current.state.moving).toEqual({ k: 'crumbify', prev: 'cv', stage: 'in' });
 
     act(() => {
       vi.advanceTimersByTime(199);
@@ -297,6 +303,37 @@ describe('usePile', () => {
     });
     expect(result.current.state.moving).toBeNull();
     expect(result.current.state.top).toBe('crumbify');
+  });
+
+  it('reacts live to prefers-reduced-motion changing mid-session, not just at mount (behaviour-04)', () => {
+    let changeHandler: ((e: MediaQueryListEvent) => void) | undefined;
+    vi.spyOn(window, 'matchMedia').mockImplementation(
+      (query: string) =>
+        ({
+          matches: false,
+          media: query,
+          addEventListener: (_: string, handler: (e: MediaQueryListEvent) => void) => {
+            if (query.includes('prefers-reduced-motion')) changeHandler = handler;
+          },
+          removeEventListener: () => {},
+        }) as unknown as MediaQueryList
+    );
+    const { result } = renderHook(() => usePile());
+    finishIntro(result);
+    expect(changeHandler).toBeDefined();
+
+    act(() => {
+      changeHandler?.({ matches: true } as MediaQueryListEvent);
+    });
+    act(() => {
+      result.current.bring('crumbify');
+    });
+    // Reduced motion is now live, so "in" arrives after one frame (16ms),
+    // not the full 440ms non-reduced OUT_TO_IN delay.
+    act(() => {
+      vi.advanceTimersByTime(16);
+    });
+    expect(result.current.state.moving).toEqual({ k: 'crumbify', prev: 'cv', stage: 'in' });
   });
 
   it('a hashchange (browser Back) that arrives mid-move is queued and replayed once the move settles', () => {

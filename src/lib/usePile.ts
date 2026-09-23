@@ -33,6 +33,8 @@ export type UsePileResult = {
 const SETTLE_MS = 960;
 const REDUCED_SETTLE_MS = 200;
 const OUT_TO_IN_MS = 440;
+/** One frame: long enough for the browser to paint the invisible 'out' stage before switching to 'in', so the reduced-motion opacity transition actually runs instead of starting and ending at opacity 1 in the same commit. */
+const REDUCED_OUT_MS = 16;
 
 function prefersReducedMotion(): boolean {
   if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false;
@@ -142,9 +144,11 @@ function useReplayPending(
 
 /**
  * bring(k)'s out -> in -> settled timing, split out of usePile to keep it
- * under the 50-line function budget. Under reduced motion, skips straight to
- * the 'in' stage (an instant cross-fade, no invisible "out" gap) and settles
- * sooner, matching Sheet.module.css' reduced-motion opacity transition.
+ * under the 50-line function budget. Always starts at the 'out' stage: under
+ * reduced motion pile.ts's sheetStyle returns that as invisible (opacity 0,
+ * no transform change) rather than off-screen, so switching to 'in' one
+ * frame later triggers Sheet.module.css' reduced-motion `opacity 0.2s`
+ * transition as a real cross-fade instead of a hard cut (behaviour-03).
  */
 function useBring(
   stateRef: MutableRefObject<PileState>,
@@ -160,21 +164,36 @@ function useBring(
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
       const prevTop = s.top;
-      const startStage = reducedMotion ? 'in' : 'out';
-      setState((prev) => ({ ...prev, moving: { k, prev: prevTop, stage: startStage }, touched: true }));
-      if (!reducedMotion) {
-        at(OUT_TO_IN_MS, () =>
-          setState((prev) =>
-            prev.moving && prev.moving.k === k ? { ...prev, moving: { k, prev: prevTop, stage: 'in' } } : prev
-          )
-        );
-      }
-      at(reducedMotion ? REDUCED_SETTLE_MS : SETTLE_MS, () =>
+      setState((prev) => ({ ...prev, moving: { k, prev: prevTop, stage: 'out' }, touched: true }));
+      const toInDelay = reducedMotion ? REDUCED_OUT_MS : OUT_TO_IN_MS;
+      at(toInDelay, () =>
+        setState((prev) =>
+          prev.moving && prev.moving.k === k ? { ...prev, moving: { k, prev: prevTop, stage: 'in' } } : prev
+        )
+      );
+      at(reducedMotion ? toInDelay + REDUCED_SETTLE_MS : SETTLE_MS, () =>
         setState((prev) => (prev.moving && prev.moving.k === k ? { ...prev, top: k, moving: null } : prev))
       );
     },
     [at, reducedMotion, setState, stateRef]
   );
+}
+
+/**
+ * Keeps `reducedMotion` in sync with the live OS preference, not just its
+ * value at mount: without this, toggling the preference mid-session leaves
+ * the CSS (`@media prefers-reduced-motion`) and the JS swap-stage timing
+ * disagreeing, so a bring() jumps the incoming sheet on-screen instead of
+ * either animating or cross-fading it (behaviour-04).
+ */
+function useReducedMotionListener(setReducedMotion: (v: boolean) => void) {
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const onChange = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, [setReducedMotion]);
 }
 
 /** Esc brings the CV to the top; hashchange (incl. browser Back) is handled by the caller. */
@@ -222,6 +241,7 @@ export function usePile(): UsePileResult {
   const pendingRef = useRef<SheetId | null>(null);
 
   useIntro(at, setState, setReducedMotion);
+  useReducedMotionListener(setReducedMotion);
 
   const pull = useCallback(() => {
     const s = stateRef.current;
