@@ -34,12 +34,12 @@ export function TitlePage({ pulling, zIndex, onDismiss }: TitlePageProps) {
       onClick={onDismiss}
       onKeyDown={handleKeyDown}
     >
-      <span className={styles.kicker}>{title.kicker}</span>
-      <span className={styles.body}>
+      <div className={styles.kicker}>{title.kicker}</div>
+      <div className={styles.body}>
         <h1 className={styles.name}>{title.name}</h1>
         <p className={styles.line}>{title.line}</p>
         <span className={styles.cta}>{title.cta}</span>
-      </span>
+      </div>
     </div>
   );
 }

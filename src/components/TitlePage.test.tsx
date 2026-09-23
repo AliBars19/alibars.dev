@@ -31,4 +31,11 @@ describe('TitlePage', () => {
     expect(control).toHaveAttribute('tabindex', '0');
     expect(screen.getByRole('heading', { level: 1, name: 'Ali Bars' })).toBeInTheDocument();
   });
+
+  it('wraps the heading/line/cta in a <div>, not a <span> (a span only allows phrasing content)', () => {
+    render(<TitlePage pulling={false} zIndex={26} onDismiss={() => {}} />);
+    const heading = screen.getByRole('heading', { level: 1, name: 'Ali Bars' });
+    const body = heading.parentElement;
+    expect(body?.tagName).toBe('DIV');
+  });
 });
