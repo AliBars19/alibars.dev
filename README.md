@@ -23,6 +23,7 @@ npm run dev          # http://localhost:3000
 | `npm test` | Vitest unit/component tests |
 | `npm run test:coverage` | Vitest with v8 coverage (80% threshold on `src/lib` + `src/components`) |
 | `npm run e2e` | Playwright, against a built + served `out/` (installs its own webServer) |
+| `npm run screenshots` | Playwright's separate `screenshots` project: re-captures `docs/screenshots/*.png`. Not part of `npm run e2e`, so the gate leaves the working tree clean. |
 
 ## Where things live
 
