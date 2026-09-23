@@ -84,6 +84,17 @@ describe('sheetStyle (z-index table)', () => {
     expect(style.z).toBe(0);
   });
 
+  it('a hidden sheet already rests at opacity 0 under reduced motion, so a swap into it is a real 0->1 fade, not a same-commit no-op (behaviour-03 / code-r4-01)', () => {
+    const reduced = sheetStyle('crumbify', { top: 'cv', moving: null }, m, true);
+    expect(reduced.visible).toBe(false);
+    expect(reduced.opacity).toBe(0);
+    // Without reduced motion, hidden sheets are still fully opaque (they
+    // are covered by transform, not opacity, so a hidden opacity of 1 is
+    // harmless and correct there).
+    const normal = sheetStyle('crumbify', { top: 'cv', moving: null }, m, false);
+    expect(normal.opacity).toBe(1);
+  });
+
   it('moving.k in "out" stage is visible at z=m+1, off to the right', () => {
     const style = sheetStyle(
       'crumbify',

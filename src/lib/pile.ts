@@ -98,7 +98,14 @@ export function sheetStyle(id: SheetId, state: PileTopState, m: number, reducedM
   if ((moving && moving.prev === id) || (!moving && top === id)) {
     return { transform: STRAIGHT_TRANSFORM, z: m + 2, visible: true, opacity: 1 };
   }
-  return { transform: STRAIGHT_TRANSFORM, z: 0, visible: false, opacity: 1 };
+  // Under reduced motion a hidden sheet must already rest at opacity 0: the
+  // 'out' stage above also returns opacity 0, so hidden -> out is a no-op
+  // and the later out -> in switch (opacity 1) runs a real 0 -> 1 fade over
+  // Sheet.module.css's reduced-motion `transition: opacity 0.2s` instead of
+  // starting the fade from an already-1 resting value (behaviour-03).
+  // Without reduced motion, transform (not opacity) is what covers a hidden
+  // sheet, so opacity 1 there is harmless and unchanged.
+  return { transform: STRAIGHT_TRANSFORM, z: 0, visible: false, opacity: reducedMotion ? 0 : 1 };
 }
 
 /** Guards for bring(k): intro must be done, no move in flight, k not already on top. */
