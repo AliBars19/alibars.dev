@@ -17,6 +17,15 @@
   line-height: 1.45;
 }
 
+/* The sheet container is only ever focused programmatically (tabIndex=-1)
+   so the next Tab starts from the right place; it is not itself a control,
+   so it should show no outline (slice-new-01). Interactive controls inside
+   it (links, buttons) keep the global :focus-visible outline. */
+.sheet:focus,
+.sheet:focus-visible {
+  outline: none;
+}
+
 .hidden {
   visibility: hidden;
 }
