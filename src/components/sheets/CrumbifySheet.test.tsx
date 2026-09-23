@@ -9,15 +9,25 @@ import { CrumbifySheet } from './CrumbifySheet';
 const cssSource = readFileSync(join(process.cwd(), 'src/components/sheets/CrumbifySheet.module.css'), 'utf-8');
 
 describe('CrumbifySheet', () => {
-  it('renders the heading, CTAs, screenshots and under-the-hood rows, and no em dash', () => {
+  it('renders the heading, screenshots and under-the-hood rows, and no em dash', () => {
     render(<CrumbifySheet onBack={() => {}} />);
     expect(screen.getByRole('heading', { level: 2, name: 'Crumbify' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /Get it on the App Store/ })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /View on GitHub/ })).toBeInTheDocument();
     expect(screen.getAllByRole('img')).toHaveLength(3);
     expect(screen.getByText('Under the hood')).toBeInTheDocument();
     expect(screen.getByText('App')).toBeInTheDocument();
     expect(document.body.textContent).not.toContain('—');
+  });
+
+  // The App Store and GitHub URLs are still TODO placeholders in
+  // content.ts as of this round (owner hasn't supplied them yet), so per
+  // the owner rule (fix round 4b) neither CTA renders. See
+  // CrumbifyCtas.test.tsx for the "real URL shows the element" /
+  // "placeholder hides it" fixtures, isolated from whatever content.ts
+  // currently has filled in.
+  it('renders no CTA row while both CTA URLs are still TODO placeholders', () => {
+    render(<CrumbifySheet onBack={() => {}} />);
+    expect(screen.queryByRole('link', { name: /Get it on the App Store/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /View on GitHub/ })).not.toBeInTheDocument();
   });
 
   it('back pill calls onBack', async () => {
@@ -46,7 +56,7 @@ describe('CrumbifySheet', () => {
   it('the GitHub CTA reads its label and icon from content.ts instead of hardcoding them (slice-cvcr4-02 / code-r4-03)', () => {
     const ctasSource = readFileSync(join(process.cwd(), 'src/components/sheets/CrumbifyCtas.tsx'), 'utf-8');
     expect(ctasSource).not.toMatch(/>\s*View on GitHub\s*</);
-    expect(ctasSource).toMatch(/crumbify\.ctas\[1\]\?\.label/);
-    expect(ctasSource).toMatch(/crumbify\.ctas\[1\]\?\.icon/);
+    expect(ctasSource).toMatch(/github\.label/);
+    expect(ctasSource).toMatch(/github\.icon/);
   });
 });
