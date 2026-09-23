@@ -1,7 +1,11 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { VideoSheet } from './VideoSheet';
+
+const cssSource = readFileSync(join(process.cwd(), 'src/components/sheets/VideoSheet.module.css'), 'utf-8');
 
 describe('VideoSheet', () => {
   it('renders the heading, stats, TikTok link and GitHub CTA, no em dash', () => {
@@ -23,5 +27,11 @@ describe('VideoSheet', () => {
     render(<VideoSheet onBack={onBack} />);
     await userEvent.click(screen.getByRole('button', { name: '← back to CV' }));
     expect(onBack).toHaveBeenCalledTimes(1);
+  });
+
+  it('body paragraphs have text-wrap: pretty (slice-text-wrap-pretty-missing)', () => {
+    const block = cssSource.match(/\.paragraph\s*{([^}]*)}/);
+    expect(block).not.toBeNull();
+    expect(block?.[1]).toMatch(/text-wrap:\s*pretty/);
   });
 });

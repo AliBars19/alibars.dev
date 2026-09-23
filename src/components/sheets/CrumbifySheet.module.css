@@ -2,6 +2,7 @@
   font-size: 16.5px;
   line-height: 1.6;
   margin: 0;
+  text-wrap: pretty;
 }
 
 .ctas {
@@ -106,6 +107,10 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
+}
+
+.rowText {
+  text-wrap: pretty;
 }
 
 .rowTech {

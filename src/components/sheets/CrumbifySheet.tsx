@@ -49,7 +49,7 @@ export function CrumbifySheet({ onBack }: { onBack: () => void }) {
           <div className={styles.row} key={spec.k}>
             <span className={styles.rowKey}>{spec.k}</span>
             <div className={styles.rowValue}>
-              <span>{spec.v}</span>
+              <span className={styles.rowText}>{spec.v}</span>
               <span className={styles.rowTech}>{spec.tech}</span>
             </div>
           </div>
