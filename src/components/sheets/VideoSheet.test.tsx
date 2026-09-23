@@ -34,4 +34,9 @@ describe('VideoSheet', () => {
     expect(block).not.toBeNull();
     expect(block?.[1]).toMatch(/text-wrap:\s*pretty/);
   });
+
+  it("the GitHub CTA's icon is driven by content.ts's cta.icon field, not always rendered (code-r4-03)", () => {
+    const source = readFileSync(join(process.cwd(), 'src/components/sheets/VideoSheet.tsx'), 'utf-8');
+    expect(source).toMatch(/video\.cta\.icon/);
+  });
 });

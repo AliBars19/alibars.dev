@@ -58,6 +58,7 @@ export const site = {
   // public/ and is downloaded directly, no external URL needed.
   downloadCvHref: '/Ali_Bars_CV.pdf',
   themeLabels: { light: 'Lights off', dark: 'Lights on' },
+  backToCv: '← back to CV',
 };
 
 export const title = {

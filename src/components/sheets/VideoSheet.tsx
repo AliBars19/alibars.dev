@@ -35,7 +35,7 @@ export function VideoSheet({ onBack }: { onBack: () => void }) {
       ))}
 
       <a className={styles.cta} href={video.cta.href} target="_blank" rel="noopener noreferrer">
-        <GithubIcon size={20} />
+        {video.cta.icon === 'github' && <GithubIcon size={20} />}
         {video.cta.label}
       </a>
     </div>

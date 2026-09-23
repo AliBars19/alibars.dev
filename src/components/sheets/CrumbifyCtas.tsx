@@ -20,8 +20,8 @@ export function CrumbifyCtas() {
         target="_blank"
         rel="noopener noreferrer"
       >
-        <GithubIcon size={20} />
-        View on GitHub
+        {crumbify.ctas[1]?.icon === 'github' && <GithubIcon size={20} />}
+        {crumbify.ctas[1]?.label}
       </a>
     </div>
   );
