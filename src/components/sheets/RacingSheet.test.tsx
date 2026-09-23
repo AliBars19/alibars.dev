@@ -39,4 +39,10 @@ describe('RacingSheet', () => {
     expect(block).not.toBeNull();
     expect(block?.[1]).toMatch(/text-wrap:\s*pretty/);
   });
+
+  it('the telemetry/GPS <strong> leads are styled at font-weight 600, not the UA-bold 700 (slice-r2-02)', () => {
+    const block = cssSource.match(/\.paragraph strong\s*{([^}]*)}/);
+    expect(block).not.toBeNull();
+    expect(block?.[1]).toMatch(/font-weight:\s*600/);
+  });
 });

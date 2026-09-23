@@ -40,6 +40,14 @@
   text-wrap: pretty;
 }
 
+/* A bare <strong> computes to UA-bold (700), but IBM Plex Sans only loads
+   400/500/600 (layout.tsx), so the browser either falls back to a
+   mismatched system face or synthesises bold; the prototype's leads are
+   600-weight spans instead (slice-r2-02, same class of fix as slice-cv-06). */
+.paragraph strong {
+  font-weight: 600;
+}
+
 .grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
