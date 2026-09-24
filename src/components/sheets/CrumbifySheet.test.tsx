@@ -18,17 +18,12 @@ describe('CrumbifySheet', () => {
     expect(document.body.textContent).not.toContain('—');
   });
 
-  // The App Store and GitHub URLs are still TODO placeholders in
-  // content.ts as of this round (owner hasn't supplied them yet), so per
-  // the owner rule (fix round 4b) neither CTA renders. See
-  // CrumbifyCtas.test.tsx for the "real URL shows the element" /
-  // "placeholder hides it" fixtures, isolated from whatever content.ts
-  // currently has filled in.
-  it('renders no CTA row while both CTA URLs are still TODO placeholders', () => {
-    render(<CrumbifySheet onBack={() => {}} />);
-    expect(screen.queryByRole('link', { name: /Get it on the App Store/ })).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: /View on GitHub/ })).not.toBeInTheDocument();
-  });
+  // The hide-while-placeholder / show-while-real behaviour for these CTAs
+  // is covered by CrumbifyCtas.test.tsx, which mocks @/content directly so
+  // both paths are exercised independent of whatever content.ts currently
+  // has filled in. Asserting a specific CTA's visibility here would just
+  // duplicate that coverage while coupling this test to live content
+  // values.
 
   it('back pill calls onBack', async () => {
     const onBack = vi.fn();
