@@ -517,4 +517,66 @@ test.describe('the pile', () => {
     await expect(page.getByRole('link', { name: /Automated Publishing Platform/ })).toHaveCount(0);
     await expect(page.getByText('Automated Publishing Platform')).toBeVisible();
   });
+
+  const MOBILE_TAB_WIDTHS = [360, 390, 430, 480, 520, 560, 599];
+
+  for (const width of MOBILE_TAB_WIDTHS) {
+    test(`at ${width}px, every mobile tab stays hit-testable above the sticky note on /#cv (slice-rvat5-01)`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width, height: 844 });
+      await page.goto('/#cv');
+      const nav = page.locator('nav[data-variant="mobile"]');
+      await expect(nav).toBeVisible();
+      const tabs = nav.getByRole('button');
+      const count = await tabs.count();
+      expect(count).toBeGreaterThan(0);
+
+      for (let i = 0; i < count; i += 1) {
+        const tab = tabs.nth(i);
+        const box = await tab.boundingBox();
+        expect(box).not.toBeNull();
+        if (!box) continue;
+        const centre = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+        const hitsTab = await page.evaluate(({ x, y }) => {
+          const el = document.elementFromPoint(x, y);
+          return el?.closest('nav[data-variant="mobile"] button') != null;
+        }, centre);
+        expect(hitsTab, `tab index ${i} at ${width}px is not hit-testable at its centre`).toBe(true);
+      }
+
+      // The note must not visually cover any mobile tab label. A raw
+      // bounding-box overlap is not itself coverage (the note can sit
+      // behind a tab, painted-over, with no visible clash) - what matters
+      // is which element actually wins the paint wherever the two boxes
+      // overlap. Sample the centre of each box's intersection and require
+      // the tab, not the note, to be on top there.
+      const note = page.locator('.js-stage >> text=psst: click anything highlighted');
+      if (await note.count()) {
+        const noteBox = await note.first().boundingBox();
+        if (noteBox) {
+          for (let i = 0; i < count; i += 1) {
+            const box = await tabs.nth(i).boundingBox();
+            if (!box) continue;
+            const ix1 = Math.max(box.x, noteBox.x);
+            const iy1 = Math.max(box.y, noteBox.y);
+            const ix2 = Math.min(box.x + box.width, noteBox.x + noteBox.width);
+            const iy2 = Math.min(box.y + box.height, noteBox.y + noteBox.height);
+            if (ix2 <= ix1 || iy2 <= iy1) continue; // no geometric overlap at all
+            const point = { x: (ix1 + ix2) / 2, y: (iy1 + iy2) / 2 };
+            const tabWinsHere = await page.evaluate(({ x, y }) => {
+              const el = document.elementFromPoint(x, y);
+              return el?.closest('nav[data-variant="mobile"] button') != null;
+            }, point);
+            expect(tabWinsHere, `tab index ${i} at ${width}px is visually covered by the sticky note`).toBe(true);
+          }
+        }
+      }
+
+      const lastTab = tabs.nth(count - 1);
+      const label = (await lastTab.textContent())?.trim();
+      await lastTab.click();
+      await expect(page).toHaveURL(new RegExp(`#${label}$`));
+    });
+  }
 });
