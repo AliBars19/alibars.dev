@@ -244,7 +244,7 @@ export const racing = {
     // pinned to (50+x)% / (50+y)% of the frame via an absolutely positioned
     // <img> + translate(-50%,-50%). naturalWidth/naturalHeight are the
     // actual asset's pixel dimensions (a low-res, to-be-replaced phone
-    // photo of a laptop screen, per the handoff) — the frame is square
+    // photo of a laptop screen, per the handoff); the frame is square
     // (RacingSheet.module.css .polaroidFrame, aspect-ratio:1/1), so the
     // maths only needs the asset's own aspect ratio. See
     // docs/implementation-notes.md deviations log.

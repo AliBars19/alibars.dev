@@ -61,7 +61,7 @@ describe('content', () => {
     // scale/x/y are the reference's literal pan (.image-slots.state.json:
     // cv-racing-gps { s:1.8, x:18, y:50 }); naturalWidth/naturalHeight are
     // the actual asset's pixel dimensions, both fed verbatim into
-    // src/lib/imageSlot.ts's `_applyView` reproduction — no derived,
+    // src/lib/imageSlot.ts's `_applyView` reproduction: no derived,
     // hand-tuned objectPosition value.
     expect(racing.gps.imageCrop).toEqual({ scale: 1.8, x: 18, y: 50, naturalWidth: 161, naturalHeight: 348 });
   });
