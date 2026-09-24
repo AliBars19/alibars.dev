@@ -1,0 +1,35 @@
+.highlight {
+  padding: 1px 5px;
+  margin: 0 -3px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background 0.2s;
+  border: 0;
+  font: inherit;
+  color: inherit;
+  text-decoration: none;
+  display: inline;
+}
+
+.yellow {
+  background: var(--highlight-yellow);
+}
+
+.yellow:hover,
+.yellow:focus-visible {
+  background: var(--highlight-yellow-hover);
+  color: inherit;
+}
+
+.purple {
+  background: var(--highlight-purple);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.purple:hover,
+.purple:focus-visible {
+  background: var(--highlight-purple-hover);
+  color: inherit;
+}

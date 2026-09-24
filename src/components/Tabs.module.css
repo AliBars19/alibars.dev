@@ -1,0 +1,89 @@
+.tabsDesktop {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 0;
+  transition: opacity 0.2s;
+}
+
+.tab {
+  position: absolute;
+  left: -12px;
+  width: 46px;
+  height: 108px;
+  padding-left: 12px;
+  border: 0;
+  border-radius: 0 8px 8px 0;
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.14);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  writing-mode: vertical-rl;
+  color: var(--ink);
+  cursor: pointer;
+  transform: translateX(-6px);
+  transition: transform 0.2s;
+}
+
+.tab.active {
+  transform: translateX(0);
+}
+
+.tab:hover,
+.tab.active:hover {
+  transform: translateX(3px);
+}
+
+.tabsMobile {
+  display: none;
+}
+
+/* The tabs sit on the desk, like the header controls (Desk.module.css:18),
+   so in dark mode they need the light outline too - the global #1c1b19
+   focus ring is barely visible on the dark desk background (behaviour-01). */
+:global([data-desk='dark']) .tabsDesktop :focus-visible,
+:global([data-desk='dark']) .tabsMobile :focus-visible {
+  outline-color: var(--desk-ink-dark);
+}
+
+@media (max-width: 599px) {
+  .tabsDesktop {
+    display: none;
+  }
+
+  .tabsMobile {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+    width: 100%;
+    margin-bottom: 12px;
+    transition: opacity 0.2s;
+    /* .stage (a flow sibling below this row) has its own `transform`, which
+       creates a stacking context even though its z-index is `auto`. Without
+       an explicit z-index here, DOM order alone decides paint order and
+       .stage (later in the DOM) paints over this row, letting the sticky
+       note (z-index 90, but scoped inside .stage's stacking context) cover
+       the tabs. Promoting this row to z-index 1 puts it in a *comparable*
+       stacking level above .stage's implicit 0, so the whole row (and its
+       tab buttons) paints above the entire stage, note included
+       (slice-rvat5-01). */
+    position: relative;
+    z-index: 1;
+  }
+
+  .tabMobile {
+    border: 0;
+    border-radius: 999px;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.14);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: var(--ink);
+    cursor: pointer;
+    padding: 6px 12px;
+  }
+}

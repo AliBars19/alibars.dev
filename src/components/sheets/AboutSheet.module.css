@@ -1,0 +1,72 @@
+.polaroids {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  margin-top: 12px;
+  padding: 0 4px;
+}
+
+.polaroid {
+  position: relative;
+  background: #fff;
+  padding: 12px 12px 44px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
+}
+
+.polaroidLeft {
+  transform: rotate(-2.5deg);
+}
+
+.polaroidRight {
+  transform: rotate(2deg) translateY(18px);
+}
+
+.polaroid img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  display: block;
+}
+
+.caption {
+  position: absolute;
+  bottom: 12px;
+  left: 14px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.h2 {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: 40px;
+  line-height: 1.1;
+  margin: 24px 0 0;
+}
+
+.body {
+  font-size: 16px;
+  line-height: 1.6;
+  margin: 0;
+  text-wrap: pretty;
+}
+
+.chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.chip {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  padding: 5px 12px;
+}
+
+.contact {
+  font-size: 15.5px;
+  margin: 0;
+}

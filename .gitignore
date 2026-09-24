@@ -1,0 +1,13 @@
+node_modules/
+.next/
+out/
+coverage/
+test-results/
+playwright-report/
+*.tsbuildinfo
+next-env.d.ts
+.env*
+.vercel
+*.stackdump
+# source resume contains a phone number: never commit it
+design_handoff_alibars_portfolio/assets/Ali_Bars_Resume.pdf

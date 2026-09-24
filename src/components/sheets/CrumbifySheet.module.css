@@ -1,0 +1,120 @@
+.intro {
+  font-size: 16.5px;
+  line-height: 1.6;
+  margin: 0;
+  text-wrap: pretty;
+}
+
+.ctas {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.cta {
+  flex: 1 1 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px 24px;
+  border-radius: 999px;
+  font-size: 16px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.appStore {
+  background: var(--appstore-bg);
+  color: var(--paper);
+}
+
+.appStore:hover {
+  background: var(--appstore-hover);
+  color: var(--paper);
+}
+
+.github {
+  background: var(--github-bg);
+  color: #fff;
+}
+
+.github:hover {
+  background: var(--github-hover);
+  color: #fff;
+}
+
+.screenshots {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 130px));
+  gap: 18px;
+  padding: 10px 0;
+}
+
+.shot {
+  position: relative;
+}
+
+.shot img {
+  width: 100%;
+  aspect-ratio: 9 / 19.5;
+  object-fit: cover;
+  border-radius: 18px;
+  display: block;
+}
+
+.tape {
+  position: absolute;
+  top: -8px;
+  left: 30%;
+  width: 40%;
+  height: 18px;
+  background: var(--tape);
+}
+
+.hood {
+  display: flex;
+  flex-direction: column;
+  margin-top: 8px;
+}
+
+.hoodLabel {
+  margin: 0 0 6px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  gap: 16px;
+  padding: 9px 0;
+  border-top: 1px solid var(--row-rule);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.rowKey {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--muted);
+  padding-top: 2px;
+}
+
+.rowValue {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rowText {
+  text-wrap: pretty;
+}
+
+.rowTech {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--muted);
+}

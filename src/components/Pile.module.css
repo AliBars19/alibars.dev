@@ -1,0 +1,49 @@
+.stageWrap {
+  position: relative;
+  width: min(760px, 100%);
+}
+
+@media (max-width: 599px) {
+  .stageWrap {
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+.stage {
+  position: relative;
+  width: 100%;
+  display: grid;
+  aspect-ratio: 1 / 1.414;
+  transition: transform 1.3s cubic-bezier(0.2, 0.75, 0.25, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage {
+    transition: none;
+  }
+}
+
+.thickness {
+  grid-area: 1 / 1;
+  background: repeating-linear-gradient(to bottom, #efebe1 0 2px, #d6cfc0 2px 3px);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
+}
+
+.filler {
+  grid-area: 1 / 1;
+  border: 1px solid rgba(0, 0, 0, 0.07);
+}
+
+.main {
+  display: flex;
+  justify-content: center;
+  padding: 28px 64px 140px 20px;
+}
+
+@media (max-width: 599px) {
+  .main {
+    padding: 20px 20px 100px;
+    flex-direction: column;
+  }
+}

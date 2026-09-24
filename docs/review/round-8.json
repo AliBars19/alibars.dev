@@ -1,0 +1,62 @@
+{
+ "totals": [
+  {
+   "reviewer": "slice-global-pile-intro",
+   "found": 0,
+   "confirmed": 0
+  },
+  {
+   "reviewer": "slice-cv-crumbify",
+   "found": 0,
+   "confirmed": 0
+  },
+  {
+   "reviewer": "slice-racing-video-about-tabs",
+   "found": 0,
+   "confirmed": 0
+  },
+  {
+   "reviewer": "behaviour-a11y-responsive",
+   "found": 0,
+   "confirmed": 0
+  },
+  {
+   "reviewer": "code-quality-security-tests",
+   "found": 2,
+   "confirmed": 2
+  }
+ ],
+ "missing": [],
+ "unverified": [],
+ "confirmed": [
+  {
+   "id": "code-r8-01",
+   "severity": "low",
+   "title": "NOT-FIXED (code-r7-04): the mobile-tab hit-test loop still calls elementFromPoint without toggling the note's pointer-events, so it cannot detect the note painting over a tab",
+   "file": "e2e/pile.spec.ts",
+   "line": 644,
+   "checklistId": "slice-rvat5-01",
+   "expected": "code-r7-04's fix asked for both loops, the tab hit-test loop and the visual-coverage loop, to temporarily set the note to pointer-events:auto before calling elementFromPoint. Then the test fails if the mobile tab row loses its `position:relative; z-index:1` (Tabs.module.css) and the note paints over the tabs.",
+   "actual": "Only the new note-text test at lines 661-698 uses the hitsSelectorPastNote toggle. The slice-rvat5-01 tab loop at lines 644-647 still calls a plain `document.elementFromPoint(centre)`. The note has pointer-events:none, so the browser always skips it and the loop returns the tab. The note-text test does not catch this regression either: when the note is on top, the toggled hit test lands on the note and not on the nav, so that test passes too. As a result, no e2e test fails when the tab row's z-index is removed.",
+   "evidence": "I served out/ on port 5105 and ran a Playwright script (scratch t1.cjs/t2.cjs) at 540/560/580/599px on /#cv with the regression injected: `nav[data-variant=mobile]{position:static!important;z-index:auto!important}`. The plain centre hit test used by the spec still returned the tab for all 5 tabs at every width (plainAllHit:true), even though the note visibly covered 26/180 (540), 27/180 (560), 15/180 (580) and 6/180 (599) sample points on the tabs. When I repeated the check with the note toggled to pointer-events:auto, the tab centre hit the NOTE: 'racing' at 430px, 'video bot' at 480 and 520px, and 'about' at 540, 560 and 580px. The toggled check fails on the broken CSS; the check as written passes.",
+   "suggestedFix": "In e2e/pile.spec.ts:644-647, swap the plain page.evaluate(elementFromPoint) for `hitsSelectorPastNote(page, noteHandle, centre, 'nav[data-variant=\"mobile\"] button')`, taking noteHandle from `page.locator(STICKY_NOTE_TEXT).first().elementHandle()` (null-safe). Wait for the note's entry animation to finish first (see code-r8-02).",
+   "verifyReasoning": "round-7.md:57 (the code-r7-04 fix) says the hit-test loop (~l.553) and the visual-coverage loop should both toggle the note's pointer-events. At e2e/pile.spec.ts:644-647 the slice-rvat5-01 tab loop still calls a plain document.elementFromPoint, and the note is pointer-events:none (StickyNote.module.css:29), so it is always skipped. I checked this live on out/ at port 5205, sampling each tab centre 1200ms after hydration. On the current CSS, the plain and toggled hit tests both return the tab at 540/560/580/599px. After injecting `nav[data-variant=mobile]{position:static!important;z-index:auto!important}`, the plain hit test still returns true for all 5 tabs at every width, so the spec passes. The toggled hit test on the 'about' tab returns false at 540, 560 and 580px, because the note is painted over it. The existing test cannot detect the regression it was written for. Test-only defect.",
+   "fix": "In e2e/pile.spec.ts:644-647, get `const noteHandle = await page.locator(STICKY_NOTE_TEXT).first().elementHandle();` once, before the loop. Replace the page.evaluate(elementFromPoint) with `const hitsTab = await hitsSelectorPastNote(page, noteHandle, centre, 'nav[data-variant=\"mobile\"] button');`. Before sampling, wait for the note's entry animation to finish (see code-r8-02). Keep the final click-through assertion as it is."
+  },
+  {
+   "id": "code-r8-02",
+   "severity": "low",
+   "title": "The new note-text coverage e2e test (the slice-r7-01 guard) samples the note partway through its 0.6s noteIn entry animation, so it misses the exact round-7 regression in 2 of 3 runs",
+   "file": "e2e/pile.spec.ts",
+   "line": 676,
+   "checklistId": "slice-r7-01 / atn-22",
+   "expected": "The regression guard measures the note at its settled position. With the round-7 bug restored (`top:-48px` at 540-599px), it should fail every run. Commit 6e28b96 claims the test 'fails (RED) against the pre-slice-r7-01-fix CSS at all 4 widths'.",
+   "actual": "The test calls noteFirstLineRect() right after the nav's aria-hidden clears. The note mounts at that same moment (phase 'done') and is still running `animation: noteIn 0.6s both`, which goes from translateY(12px) to 0 (StickyNote.module.css:1-10,25). The first text line is therefore measured 3-6px lower than where it settles, and the test samples only the line's vertical centre. A regression that covers the settled text can pass, and whether it does depends on timing.",
+   "evidence": "On out/ at port 5105, 560px /#cv, I replayed the exact spec sequence (goto, expect aria-hidden cleared, toHaveCount(5), scroll check, then sample). When measured, the note animation's currentTime was 17-167ms (scratch t4.cjs), and lineTop read 121-124px against a settled value of 118px. I then injected the round-7 regression CSS `top:-48px` and ran the spec's own 21-point toggled sampling (t5b.cjs). At the moment the test samples, the hits were 21, 0 and 0 over 3 runs, so the test passed 2 of 3 times. After a 900ms wait, all 3 runs showed 21/21 samples under the nav. With `top:-44px` the test-time hits were 0, 21 and 0; with `top:-40px` they were 0, 0 and 0, while the settled state showed 21/21 covered in every run.",
+   "suggestedFix": "Before measuring in the loop at e2e/pile.spec.ts:661-698, wait for the note's animations to settle, for example `await page.locator(STICKY_NOTE_TEXT).first().evaluate(el => Promise.all(el.getAnimations().map(a => a.finished)))`. Do the same in any other test that measures the note's geometry, including the tab hit-test loop once code-r8-01 is fixed.",
+   "verifyReasoning": "StickyNote.module.css:1-10 and :25 run `noteIn 0.6s both` (translateY 12px to 0). The test at e2e/pile.spec.ts:676 calls noteFirstLineRect straight after the aria-hidden, count and scroll checks, without waiting for the animation. I checked this live at 560px with the round-7 regression reinjected (note top:-48px). Over 4 runs, sampling as soon as aria-hidden cleared, the animation currentTime was 0-66ms, the first line's top was about 99.6-100.3px, and 0 of 21 samples hit the nav, so the test would pass. After a 900ms wait (currentTime 600), top was 94.0px and 21 of 21 samples hit the nav. The guard therefore misses the exact regression it was added for, depending on timing.",
+   "fix": "In e2e/pile.spec.ts, after `await expect(nav.getByRole('button')).toHaveCount(MOBILE_TAB_COUNT);` (around line 670) and before noteFirstLineRect, add `await page.locator(STICKY_NOTE_TEXT).first().evaluate((el) => Promise.all((el.closest('[class*=\"note\"]') ?? el).getAnimations({ subtree: true }).map((a) => a.finished)));`. Alternatively, call getAnimations({subtree:true}) on the element that has the .note class. Add the same wait to the slice-rvat5-01 tab loop once code-r8-01 switches it to hitsSelectorPastNote."
+  }
+ ],
+ "refuted": []
+}

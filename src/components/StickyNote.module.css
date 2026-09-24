@@ -1,0 +1,66 @@
+@keyframes noteIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px) rotate(8deg);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) rotate(4deg);
+  }
+}
+
+.note {
+  position: absolute;
+  top: -22px;
+  right: 28px;
+  z-index: 90;
+  width: 210px;
+  background: var(--sticky);
+  color: var(--ink);
+  padding: 18px 18px 20px;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.2);
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  line-height: 1.55;
+  animation: noteIn 0.6s both;
+  /* Non-interactive hint (atn-27): never take clicks meant for content
+     underneath it, e.g. the CV's GitHub contact link at narrow widths
+     (behaviour-03). */
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .note {
+    animation: none;
+    transform: rotate(4deg);
+  }
+}
+
+/* In this width band the note's rotated bottom-left corner would otherwise
+   land on top of the CV contact row's 'github.com/AliBars19' link. Move it
+   further up and right, clear of the contact row, while the desktop
+   position (top:-22px; right:28px) stays unchanged at 661px and above
+   (behaviour-03). This band starts at 600px, not 540px: below 600px the
+   mobile tab row (Tabs.module.css) is a flow sibling that paints above
+   .stage, and lifting the note this far would put its first text line
+   under the tab pills (round-7 regression: slice-r7-01 / slice-01 /
+   behaviour-r7-01). */
+@media (min-width: 600px) and (max-width: 660px) {
+  .note {
+    top: -48px;
+    right: 8px;
+  }
+}
+
+/* 540-599px: still the mobile tab-row layout, so the note can only move up
+   as far as the row's bottom edge allows before its first text line is
+   covered. This smaller nudge clears the CV contact row's GitHub link
+   (measured: 0-9 of 140 sample points at worst) while keeping the note's
+   first line below the tab row and causing no horizontal overflow (round-7,
+   slice-r7-01 / slice-01 / behaviour-r7-01). */
+@media (min-width: 540px) and (max-width: 599px) {
+  .note {
+    top: -24px;
+    right: -8px;
+  }
+}
