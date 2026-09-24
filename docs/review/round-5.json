@@ -1,0 +1,134 @@
+{
+ "totals": [
+  {
+   "reviewer": "slice-global-pile-intro",
+   "found": 2,
+   "confirmed": 2
+  },
+  {
+   "reviewer": "slice-cv-crumbify",
+   "found": 0,
+   "confirmed": 0
+  },
+  {
+   "reviewer": "slice-racing-video-about-tabs",
+   "found": 1,
+   "confirmed": 1
+  },
+  {
+   "reviewer": "behaviour-a11y-responsive",
+   "found": 0,
+   "confirmed": 0
+  },
+  {
+   "reviewer": "code-quality-security-tests",
+   "found": 5,
+   "confirmed": 4
+  }
+ ],
+ "missing": [],
+ "unverified": [],
+ "confirmed": [
+  {
+   "id": "slice-gl27-emdash-01",
+   "severity": "low",
+   "title": "The round-4 GPS-crop fix added an em dash (U+2014) to the content source src/content.ts, so the gl-27 check on src/ now fails",
+   "file": "src/content.ts",
+   "line": 247,
+   "checklistId": "gl-27",
+   "expected": "gl-27: no em dash (U+2014) anywhere in rendered copy or content source. Grepping src/ and out/ for U+2014 should return 0 hits, apart from the test assertions that check it is absent.",
+   "actual": "src/content.ts:247 contains the comment `// photo of a laptop screen, per the handoff) — the frame is square`, which has a U+2014 em dash. src/content.test.ts:64 has another one in a comment (`_applyView` reproduction — no derived,`). Both came in with commit 38e8805 'fix: reproduce the reference's exact GPS polaroid crop math (slice-rv-gps-crop-01)'. The built out/index.html has 0 em dashes, so nothing on the page shows it. Only the content-source part of gl-27 is affected.",
+   "evidence": "`grep -rn $'—' src` gives src/content.ts:247 and src/content.test.ts:64 (comments), plus the expected `.not.toContain('—')` assertions in 6 test files. `git log -S$'—' -- src/content.ts` gives 38e8805. `grep -c $'—' out/index.html` gives 0.",
+   "suggestedFix": "Change the em dash in the comments at src/content.ts:247 and src/content.test.ts:64 to a comma or a colon (for example `photo of a laptop screen, per the handoff); the frame is square`).",
+   "verifyReasoning": "Reproduced. After filtering out the `.not.toContain` assertion lines, grepping src/ for U+2014 still finds two comment hits: src/content.ts:247 ('per the handoff) — the frame is square') and src/content.test.ts:64 ('`_applyView` reproduction — no derived,'). docs/acceptance-checklist.md:48 (gl-27) says there must be no em dash anywhere in the content source, and its check is that grepping src/ returns 0. out/index.html has 0 em dashes, so nothing on the page is affected. Only the source-grep part of gl-27 fails.",
+   "fix": "In src/content.ts:247, replace ' — the frame is square' with '; the frame is square'. In src/content.test.ts:64, replace 'reproduction — no derived,' with 'reproduction: no derived,'. Then re-run the U+2014 grep on src/: the only hits left should be the `.not.toContain('—')` assertions."
+  },
+  {
+   "id": "slice-intro03-kicker-flex-01",
+   "severity": "low",
+   "title": "The title-page kicker 'vol. 01' is a block element, but the spec and prototype use a flex row",
+   "file": "src/components/TitlePage.module.css",
+   "line": 26,
+   "checklistId": "intro-03",
+   "expected": "intro-03: kicker `vol. 01` is IBM Plex Mono 12px #5f5b54 in a flex row at the top left. Prototype line 181: `<div style=\"display:flex;font-family:'IBM Plex Mono',monospace;font-size:12px;color:#5f5b54\"><span>vol. 01</span></div>`.",
+   "actual": "The .kicker rule (TitlePage.module.css:26-30) sets only font-family, font-size and color. It has no display:flex, and TitlePage.tsx:37 renders the text straight into the div without the inner span. On the live build, getComputedStyle(kicker).display is 'block'. Font 'IBM Plex Mono', size 12px and colour rgb(95, 91, 84) are correct. With a single text child, the rendered position and size look the same, so this only differs from the checklist value and has no visible effect.",
+   "evidence": "Playwright on out/ at 1440x900, fresh load of /: kicker { t:'vol. 01', ff:'\"IBM Plex Mono\", ...', fs:'12px', c:'rgb(95, 91, 84)' }, and TitlePage.module.css .kicker has no display declaration, so the computed display is block.",
+   "suggestedFix": "Add `display: flex;` to .kicker in src/components/TitlePage.module.css. Optionally wrap the text in a <span> in TitlePage.tsx:37 to match the prototype markup.",
+   "verifyReasoning": "Confirmed. docs/acceptance-checklist.md:90 (intro-03) says the kicker is in a flex row at the top left and is checked by code grep. The .kicker rule in src/components/TitlePage.module.css:26-30 declares only font-family, font-size and color, with no display:flex, so its computed display is block. src/components/TitlePage.tsx:37 renders {title.kicker} straight into the div without the prototype's inner <span>. The font, 12px size and muted colour are correct. There is no visible difference with a single text child, so the severity stays low: it only differs from the checklist value.",
+   "fix": "Add `display: flex;` to the .kicker rule in src/components/TitlePage.module.css (lines 26-30). Optionally wrap the text in a span in src/components/TitlePage.tsx:37, as `<div className={styles.kicker}><span>{title.kicker}</span></div>`, to match prototype line 181."
+  },
+  {
+   "id": "slice-rvat5-01",
+   "severity": "medium",
+   "title": "From 430px to 599px wide, the sticky note covers the mobile tab row and blocks clicks on the 'racing', 'video bot' or 'about' tab",
+   "file": "src/components/StickyNote.module.css",
+   "line": 12,
+   "checklistId": "gl-26 / atn-22 / atn-21",
+   "expected": "Below 600px the divider tabs sit in a horizontal row above the pile (gl-26, README line 234), and every tab stays visible and clickable (atn-21: a tab click calls bring(id)). The sticky note is a non-interactive hint (atn-27). It must not cover or intercept clicks on a tab.",
+   "actual": "The note is a child of .stage and uses top:-22px, z-index:90 and pointer-events:auto. The stage has a transform, so it paints after the mobile tab row, which comes earlier in the DOM and has no z-index. The note's top 22px therefore extends up over the tab row. At widths where the row fits on one line, the note covers the right-hand tabs. Hit test on /#cv (share of each tab's area that elementFromPoint does not resolve to the tab): 430px: racing 51% (centre hits StickyNote_note), video bot 40%, about 17%. 480px: video bot 54% (centre hits the note), about 31%. 520px: video bot 43% (centre), about 43%. 560px: about 55% (centre). 599px: about 55% (centre). At 599px, Playwright's click on the 'about' mobile tab times out because the note intercepts the pointer, and the ABOUT label is almost fully hidden in the screenshot. Widths from 360 to 414px are unaffected (the row wraps to two lines, and only the 2-4% corner/shadow baseline registers). The implementation-notes deviation entry about the note covers only the overlap with the CV name/tagline, not the tabs.",
+   "evidence": "Playwright script in scratch dir review-r5/slice-racing-video-about-tabs/hit.cjs, run against out/ served on :5103, 16 samples per tab via document.elementFromPoint. Output: '599 ... about:55%(centre->StickyNote_note__n_t5j)'; 'page.click: Timeout 2000ms exceeded' clicking nav[data-variant=\"mobile\"] button:nth-child(5). Screenshot m-cv-599.png shows the yellow note over the ABOUT pill. Structure: Pile.tsx renders <Tabs variant=\"mobile\"> as a sibling before .js-stage (the transformed stacking context), and <StickyNote/> as the last child of .js-stage. Tabs.module.css .tabsMobile has no position or z-index.",
+   "suggestedFix": "Make the mobile tab row paint above the stage. In src/components/Tabs.module.css, inside the @media (max-width:599px) .tabsMobile rule, add `position: relative; z-index: 1;`. The transformed .stage is z-index auto, so a positioned z-index:1 sibling outranks it, including the note's z-index 90, which only applies inside the stage's stacking context. Alternatively, move the note clear of the row below 600px, e.g. `@media (max-width:599px){ .note { top: 8px; } }`. Add an e2e test at viewport widths of 480 and 599 on /#cv: click each mobile tab by its centre and assert location.hash changes (or that elementFromPoint at the tab's centre is inside the tab).",
+   "verifyReasoning": "I reproduced this on the current out/ build, served on port 5203. In src/components/StickyNote.module.css, lines 12-16, .note has position:absolute, top:-22px and z-index:90. Pile.tsx line 72 renders it inside the transformed .js-stage (line 49). The mobile tab row is an earlier sibling (Pile.tsx line 48), and .tabsMobile in Tabs.module.css (the @media max-width:599px block) has no position or z-index. The stage therefore paints over the row, and the note's top 22px lands on the tabs. I ran elementFromPoint at each tab's centre on /#cv. At 390px all five tabs hit themselves. At 430px 'racing' hits StickyNote_note__n_t5j. At 480px and 520px 'video bot' hits the note. At 560px and 599px 'about' hits the note, and Playwright's locator.click on the 'about' tab times out after 2000ms because the note intercepts the pointer. In the 599px screenshot the yellow note covers almost all of the ABOUT pill. The implementation-notes entry on the sticky note (line 21) accepts only the overlap with the CV name and tagline, not with the tabs. atn-21 requires a tab click to call bring(id), which is broken for that tab at these widths.",
+   "fix": "In src/components/Tabs.module.css, inside the @media (max-width: 599px) block, add `position: relative; z-index: 1;` to the .tabsMobile rule. The row then stacks above the transformed .stage, whose z-index is auto, and so above the note, whose z-index 90 only counts inside the stage's own stacking context. Add an e2e test that loads /#cv at viewport widths of 430, 480, 560 and 599, and asserts that document.elementFromPoint at the centre of each nav[data-variant=\"mobile\"] button falls inside that button, and that clicking the last tab (about) brings the about sheet to the top."
+  },
+  {
+   "id": "code-r5-01",
+   "severity": "low",
+   "title": "The GitHub icon on the Crumbify and Video CTAs has no behavioural test. Removing both icons still passes all 136 unit tests",
+   "file": "src/components/sheets/CrumbifyCtas.test.tsx",
+   "line": 42,
+   "checklistId": "cr-10 / cr-12 / extra-bd-07",
+   "expected": "The code-r4-03 fix made the icon depend on content: `{github.icon === 'github' && <GithubIcon size={20} />}` (CrumbifyCtas.tsx:34) and `{video.cta.icon === 'github' && <GithubIcon size={20} />}` (VideoSheet.tsx:41). Once a real URL is filled in, a test should render the CTA and fail if its 20px GitHub svg is missing.",
+   "actual": "The fixture tests already render both CTAs with real URLs (CrumbifyCtas.test.tsx:42-55, VideoSheet.test.tsx:138-155), but they only check the link's name and href. The only icon checks are source-text regexes: CrumbifySheet.test.tsx:60 `toMatch(/github\\.icon/)` and VideoSheet.test.tsx:172 `toMatch(/video\\.cta\\.icon/)`. Both still pass when the icon is never rendered. The e2e suite cannot catch this either, because all these CTAs are hidden while their URLs are TODO placeholders. So when the owner adds the real URLs, the buttons could ship without their icon and no test would notice.",
+   "evidence": "Mutation test on a copy of HEAD in the scratch dir. In CrumbifyCtas.tsx:34 and VideoSheet.tsx:41, replaced `<GithubIcon size={20} />` with `null`, keeping the `github.icon === 'github' &&` / `video.cta.icon === 'github' &&` text. Result: `npx tsc --noEmit` clean, and `npx vitest run` passed: 22 files, 136 tests.",
+   "suggestedFix": "In CrumbifyCtas.test.tsx's 'renders both CTAs' test, add `expect(screen.getByRole('link', { name: /View on GitHub/ }).querySelector('svg')).not.toBeNull()`. Add a fixture without `icon` and assert that no svg renders. Do the same in VideoSheet.test.tsx's 'shows the button once a real URL is filled in' test. Then delete the two source-grep tests (CrumbifySheet.test.tsx:56-61, VideoSheet.test.tsx:170-173), or keep them only for the label.",
+   "verifyReasoning": "CrumbifyCtas.tsx:34 renders `{github.icon === 'github' && <GithubIcon size={20} />}`. CrumbifyCtas.test.tsx:17-70 only asserts link presence/absence by name and never queries an svg. grep for 'svg|querySelector' in VideoSheet.test.tsx finds nothing. The only icon checks are the source regexes at CrumbifySheet.test.tsx:60 (/github\\.icon/) and VideoSheet.test.tsx:71 (/video\\.cta\\.icon/), which still pass if the element is replaced by null. The e2e suite cannot see these CTAs because all their URLs are TODO placeholders. By contrast, CvProjects.test.tsx:41/67 does check the svg, so the Crumbify and Video tests are the odd ones out.",
+   "fix": "In src/components/sheets/CrumbifyCtas.test.tsx, in the test with both real URLs, add `expect(screen.getByRole('link', { name: /View on GitHub/ }).querySelector('svg')).not.toBeNull()`, and add a fixture with a real href and no `icon` that asserts `querySelector('svg')` is null. In src/components/sheets/VideoSheet.test.tsx, in the real-URL fixture test (cta with icon:'github', line ~44), assert that the 'View the code on GitHub' link contains an svg. Then drop the source-regex tests at CrumbifySheet.test.tsx:56-61 and VideoSheet.test.tsx:69-72, or narrow them to the label only."
+  },
+  {
+   "id": "code-r5-02",
+   "severity": "low",
+   "title": "content.ts's header comment still says TODO placeholders exist 'so buttons still render', the opposite of the owner's round 4b rule",
+   "file": "src/content.ts",
+   "line": 7,
+   "expected": "Owner decision (implementation-notes.md, 2026-09-23 and fix round 4b): any CTA or link whose URL is still a TODO placeholder is hidden, not rendered dead. src/lib/url.ts:1-12 and README.md:33-36 already say this.",
+   "actual": "content.ts:7 still reads ` *  - Unknown URLs are '#TODO-...' placeholders so buttons still render.` That is the pre-4b behaviour. content.ts is the file the owner edits to add the 4 URLs, so its header comment now contradicts the code (CrumbifyCtas.tsx:15-18, VideoSheet.tsx:39, CvProjects.tsx:22-24).",
+   "evidence": "`grep -rn 'still render' src` returns only src/content.ts:7. The live build hides the CTAs: /#crumbify has no App Store or GitHub link, /#video has no 'View the code on GitHub' link, and the CV's Automated Publishing Platform title is plain text, which matches e2e/pile.spec.ts:504-519.",
+   "suggestedFix": "Change content.ts:7 to: `Unknown URLs are '#TODO-...' placeholders; any CTA/link whose href is still a placeholder is hidden (src/lib/url.ts isPlaceholderUrl) until a real URL replaces it.`",
+   "verifyReasoning": "src/content.ts:7 reads ` *  - Unknown URLs are '#TODO-...' placeholders so buttons still render.` That contradicts the owner's round-4b rule, which README.md:31-36 and src/lib/url.ts document and CrumbifyCtas.tsx:15-18 implements: CTAs with placeholder URLs do not render.",
+   "fix": "Change src/content.ts:7 to ` *  - Unknown URLs are '#TODO-...' placeholders; any CTA/link whose href is still a placeholder is hidden (src/lib/url.ts isPlaceholderUrl) until a real URL replaces it.`"
+  },
+  {
+   "id": "code-r5-04",
+   "severity": "low",
+   "title": "NOT-FIXED (code-r3-05): the Pile component is still 51 lines, over the 50-line function limit",
+   "file": "src/components/Pile.tsx",
+   "line": 27,
+   "expected": "Functions under 50 lines (coding-style.md). Round-3 code-r3-05 counted from the signature line to the closing brace and flagged CrumbifySheet at 52 lines (9-60) along with Pile.",
+   "actual": "`export function Pile()` runs from Pile.tsx:27 to line 77, which is 51 lines. The round-3 extraction of useFocusOnTopChange and useFocusAfterIntro brought it down from 90 lines, but not under the limit. Pile.tsx has not changed since 507b487. The 11-line JSX comment at lines 41-45 and the sheet map at lines 55-66 keep it over.",
+   "evidence": "TypeScript-AST function-length scan (scratch fnlen.cjs) over src/: `src/components/Pile.tsx 27 77 51 Pile`. Every other function is under 50 lines (RacingSheet 47, usePile 46).",
+   "suggestedFix": "Move the sheet map (Pile.tsx:55-66) into a small `ContentSheets({ top, moving, reducedMotion, bring, inert })` component, or move the long title comment (lines 41-45) into the file header. Either brings Pile under 50 lines.",
+   "verifyReasoning": "src/components/Pile.tsx:27 `export function Pile() {` runs to the closing brace at line 77: 51 lines inclusive. That is the same counting convention round-3 code-r3-05 used ('CrumbifySheet is 52 (9-60)'), and code-r3-05 flagged Pile. The house rule is functions under 50 lines, so the item is only partly fixed (90 down to 51, still over the limit). Marginal, but reproducible.",
+   "fix": "Bring src/components/Pile.tsx `Pile` under 50 lines. Either move the 5-line JSX comment above <title> (lines 41-45) into a comment above the function or into the file header, or extract the SHEET_RENDER_ORDER map (lines 55-66) into a small `ContentSheets({ top, moving, reducedMotion, bring, inert })` component."
+  },
+  {
+   "id": "code-r5-05",
+   "severity": "low",
+   "title": "The committed docs/screenshots are stale after fix round 4b: they still show the Crumbify CTAs that the build now hides",
+   "file": "docs/screenshots/03-crumbify.png",
+   "line": 0,
+   "expected": "docs/screenshots/*.png match the current build. README.md:26 says `npm run screenshots` re-captures them, and each earlier fix round refreshed them (b252f61 in round 3, 8180425 in round 4).",
+   "actual": "03-crumbify.png still shows the 'Get it on the App Store ↗' and 'View on GitHub' buttons under the intro. On the HEAD build both are hidden (e2e/pile.spec.ts:509-510). The same applies to 05-video.png (the 'View the code on GitHub' CTA) and 02-cv-top.png (the purple Automated Publishing Platform highlight, now plain text). `git log` for 02/03/05 shows the last update at b252f61 (round 3), before the 4b commits d6226fb, 3e29cfa and 413b289.",
+   "evidence": "I opened docs/screenshots/03-crumbify.png with the Read tool and both black CTA pills are visible. `git log --oneline -2 -- docs/screenshots/03-crumbify.png docs/screenshots/05-video.png docs/screenshots/02-cv-top.png` gives b252f61 and f00ec5d.",
+   "suggestedFix": "Rebuild (`npm run build`), run `npm run screenshots`, and commit the refreshed 02, 03 and 05 PNGs with the 4b docs.",
+   "verifyReasoning": "I read docs/screenshots/03-crumbify.png: it shows the black 'Get it on the App Store' and 'View on GitHub' pills. The HEAD content still has TODO hrefs, and CrumbifyCtas.tsx:18 returns null, so the current build shows no CTA row. `git log -- docs/screenshots` shows the last refresh at 8180425 (round-4 GPS crop), before the 4b hiding commits (3e29cfa, 413b289). README.md:26 says these screenshots are re-captured from the site by `npm run screenshots`, so the committed screenshots no longer match the build.",
+   "fix": "Run `npm run build` then `npm run screenshots`, and commit the refreshed docs/screenshots PNGs. At minimum that is 03-crumbify.png (no CTA row), 05-video.png (no GitHub CTA) and 02-cv-top.png (Automated Publishing Platform title as plain text), as a docs commit on this branch."
+  }
+ ],
+ "refuted": [
+  {
+   "id": "code-r5-03",
+   "why": "wc -l e2e/pile.spec.ts gives 520. The house rule in coding-style.md is '200-400 lines typical, 800 max', so 400 is a typical size and not a limit. At 520 the file is well under the 800-line hard maximum. This is a style preference, not a rule violation."
+  }
+ ]
+}
