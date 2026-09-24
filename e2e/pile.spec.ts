@@ -597,4 +597,34 @@ test.describe('the pile', () => {
       await expect(page).toHaveURL(new RegExp(`#${label}$`));
     });
   }
+
+  const GITHUB_LINK_TEST_WIDTHS = [560, 600, 640];
+
+  for (const width of GITHUB_LINK_TEST_WIDTHS) {
+    test(`at ${width}px, the sticky note does not intercept clicks on the CV's GitHub contact link (behaviour-03)`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto('/#cv');
+      const link = page.getByRole('link', { name: 'github.com/AliBars19' });
+      await expect(link).toBeVisible();
+      const box = await link.boundingBox();
+      expect(box).not.toBeNull();
+      if (!box) return;
+
+      // Sample several points along the link, not just its centre, since an
+      // overlapping note only needs to steal part of the link's box.
+      const fractions = [0.1, 0.3, 0.5, 0.7, 0.9];
+      for (const f of fractions) {
+        const point = { x: box.x + box.width * f, y: box.y + box.height / 2 };
+        const hitsLink = await page.evaluate(({ x, y }) => {
+          const el = document.elementFromPoint(x, y);
+          return el?.closest('a[href="https://github.com/AliBars19"]') != null;
+        }, point);
+        expect(hitsLink, `point at fraction ${f} along the GitHub link at ${width}px resolves to the sticky note, not the link`).toBe(
+          true
+        );
+      }
+    });
+  }
 });

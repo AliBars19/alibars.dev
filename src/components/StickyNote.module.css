@@ -23,11 +23,27 @@
   font-size: 12.5px;
   line-height: 1.55;
   animation: noteIn 0.6s both;
+  /* Non-interactive hint (atn-27): never take clicks meant for content
+     underneath it, e.g. the CV's GitHub contact link at narrow widths
+     (behaviour-03). */
+  pointer-events: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .note {
     animation: none;
     transform: rotate(4deg);
+  }
+}
+
+/* In this width band the note's rotated bottom-left corner would otherwise
+   land on top of the CV contact row's 'github.com/AliBars19' link. Move it
+   further up and right, clear of the contact row, while the desktop
+   position (top:-22px; right:28px) stays unchanged at 661px and above
+   (behaviour-03). */
+@media (min-width: 540px) and (max-width: 660px) {
+  .note {
+    top: -48px;
+    right: 8px;
   }
 }
