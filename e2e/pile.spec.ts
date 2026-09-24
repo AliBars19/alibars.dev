@@ -379,6 +379,24 @@ test.describe('the pile', () => {
     expect(outlineColor).toBe('rgb(28, 27, 25)');
   });
 
+  test('in dark mode, a keyboard-focused tab shows the visible dark outline, not the near-invisible light one (behaviour-01)', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/#cv');
+    await page.locator('html').evaluate((el) => el.setAttribute('data-desk', 'dark'));
+    const desktopTab = page.locator('nav[data-variant="desktop"] button').first();
+    await desktopTab.focus();
+    const desktopOutline = await desktopTab.evaluate((el) => getComputedStyle(el).outlineColor);
+    expect(desktopOutline).toBe('rgb(232, 228, 220)');
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    const mobileTab = page.locator('nav[data-variant="mobile"] button').first();
+    await mobileTab.focus();
+    const mobileOutline = await mobileTab.evaluate((el) => getComputedStyle(el).outlineColor);
+    expect(mobileOutline).toBe('rgb(232, 228, 220)');
+  });
+
   test('Racing telemetry/GPS leads render at font-weight 600, matching the prototype (slice-r2-02)', async ({
     page,
   }) => {

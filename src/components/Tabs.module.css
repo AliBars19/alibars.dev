@@ -39,6 +39,14 @@
   display: none;
 }
 
+/* The tabs sit on the desk, like the header controls (Desk.module.css:18),
+   so in dark mode they need the light outline too - the global #1c1b19
+   focus ring is barely visible on the dark desk background (behaviour-01). */
+:global([data-desk='dark']) .tabsDesktop :focus-visible,
+:global([data-desk='dark']) .tabsMobile :focus-visible {
+  outline-color: var(--desk-ink-dark);
+}
+
 @media (max-width: 599px) {
   .tabsDesktop {
     display: none;
