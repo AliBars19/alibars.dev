@@ -25,11 +25,19 @@ describe('StickyNote', () => {
     expect(cssSource).toMatch(/\.note\s*{[^}]*pointer-events:\s*none/);
   });
 
-  // behaviour-03: between 560 and 640px the rotated note corner would
+  // behaviour-03: between 600 and 660px the rotated note corner would
   // otherwise sit over the CV's GitHub contact link; a media query nudges
   // it clear there while the desktop position (top:-22px; right:28px) stays
   // unchanged at 661px and above.
-  it('CSS nudges the note position for the 540-660px range where it would overlap the GitHub link', () => {
-    expect(cssSource).toMatch(/@media \(min-width: 540px\) and \(max-width: 660px\)\s*{\s*\.note\s*{/);
+  it('CSS nudges the note position for the 600-660px range where it would overlap the GitHub link', () => {
+    expect(cssSource).toMatch(/@media \(min-width: 600px\) and \(max-width: 660px\)\s*{\s*\.note\s*{/);
+  });
+
+  // round-7 regression (slice-r7-01 / slice-01 / behaviour-r7-01): the
+  // 600-660px nudge must not also apply at 540-599px, where the mobile tab
+  // row sits directly above .stage and would then paint over the note's
+  // first text line. That band gets its own, smaller nudge instead.
+  it('CSS uses a smaller, separate nudge for the 540-599px mobile-tab-row range', () => {
+    expect(cssSource).toMatch(/@media \(min-width: 540px\) and \(max-width: 599px\)\s*{\s*\.note\s*{/);
   });
 });

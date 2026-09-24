@@ -40,10 +40,27 @@
    land on top of the CV contact row's 'github.com/AliBars19' link. Move it
    further up and right, clear of the contact row, while the desktop
    position (top:-22px; right:28px) stays unchanged at 661px and above
-   (behaviour-03). */
-@media (min-width: 540px) and (max-width: 660px) {
+   (behaviour-03). This band starts at 600px, not 540px: below 600px the
+   mobile tab row (Tabs.module.css) is a flow sibling that paints above
+   .stage, and lifting the note this far would put its first text line
+   under the tab pills (round-7 regression: slice-r7-01 / slice-01 /
+   behaviour-r7-01). */
+@media (min-width: 600px) and (max-width: 660px) {
   .note {
     top: -48px;
     right: 8px;
+  }
+}
+
+/* 540-599px: still the mobile tab-row layout, so the note can only move up
+   as far as the row's bottom edge allows before its first text line is
+   covered. This smaller nudge clears the CV contact row's GitHub link
+   (measured: 0-9 of 140 sample points at worst) while keeping the note's
+   first line below the tab row and causing no horizontal overflow (round-7,
+   slice-r7-01 / slice-01 / behaviour-r7-01). */
+@media (min-width: 540px) and (max-width: 599px) {
+  .note {
+    top: -24px;
+    right: -8px;
   }
 }
