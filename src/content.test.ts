@@ -1,4 +1,7 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { isPlaceholderUrl } from './lib/url';
 import { about, crumbify, cv, note, racing, site, tabs, title, video } from './content';
 
 function allStrings(value: unknown, acc: string[] = []): string[] {
@@ -38,11 +41,27 @@ describe('content', () => {
     expect(site.downloadCvHref).toBe('/Ali_Bars_CV.pdf');
   });
 
-  it('marks unknown URLs with a TODO placeholder', () => {
-    const project = cv.projects.find((p) => p.title === 'Automated Publishing Platform');
-    expect(project && 'href' in project ? project.href : undefined).toMatch(/^#TODO-/);
-    expect(crumbify.ctas[0]?.href).toMatch(/^#TODO-/);
-    expect(video.cta.href).toMatch(/^#TODO-/);
+  it('every conditionally-hidden URL is either a real https URL or a placeholder that isPlaceholderUrl recognises, and any remaining placeholder is marked with a TODO(ali) comment', () => {
+    // These are exactly the fields the app gates on isPlaceholderUrl (see
+    // CrumbifyCtas.tsx, CvProjects.tsx, VideoSheet.tsx): an external
+    // project's href, the Crumbify CTA hrefs, and the video CTA href. This
+    // asserts the invariant, not which specific ones are still TODO, so
+    // filling in a placeholder never breaks this test.
+    const externalProjectHrefs = cv.projects
+      .filter((p): p is typeof p & { href: string } => 'href' in p && typeof p.href === 'string')
+      .map((p) => p.href);
+    const hrefs = [...externalProjectHrefs, ...crumbify.ctas.map((c) => c.href), video.cta.href];
+
+    const contentSource = readFileSync(join(process.cwd(), 'src/content.ts'), 'utf-8');
+    for (const href of hrefs) {
+      expect(href.startsWith('https://') || isPlaceholderUrl(href)).toBe(true);
+      if (isPlaceholderUrl(href)) {
+        const idx = contentSource.indexOf(href);
+        expect(idx).toBeGreaterThan(-1);
+        const before = contentSource.slice(Math.max(0, idx - 200), idx);
+        expect(before).toMatch(/TODO\(ali\)/);
+      }
+    }
   });
 
   it('has exactly 5 tabs matching the sheet ids', () => {

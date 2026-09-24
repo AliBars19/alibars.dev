@@ -54,18 +54,10 @@ describe('CvSheet', () => {
     expect(onOpen).toHaveBeenCalledWith('about');
   });
 
-  // The Automated Publishing Platform GitHub URL is still a TODO
-  // placeholder in content.ts as of this round, so per the owner rule (fix
-  // round 4b) the title renders as plain text, not a link. See
-  // CvProjects.test.tsx for the "real URL shows the link" fixture.
-  it('the Automated Publishing Platform title renders as plain text (not a link) while its GitHub URL is a TODO placeholder', () => {
-    const onOpen = vi.fn();
-    render(<CvSheet onOpen={onOpen} />);
-    expect(screen.queryByRole('link', { name: /Automated Publishing Platform/ })).not.toBeInTheDocument();
-    const title = screen.getByText('Automated Publishing Platform');
-    expect(title.tagName).toBe('SPAN');
-    expect(onOpen).not.toHaveBeenCalled();
-  });
+  // The hide-while-placeholder / show-while-real behaviour for the
+  // Automated Publishing Platform's href is covered by CvProjects.test.tsx,
+  // which mocks @/content directly so both paths are exercised independent
+  // of whatever content.ts currently has filled in.
 
   it('contact row has no phone entry and mailto/linkedin/github links', () => {
     render(<CvSheet onOpen={() => {}} />);
