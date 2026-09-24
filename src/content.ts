@@ -1,14 +1,3 @@
-/**
- * Single typed content module. All copy + URLs for the site live here.
- * Ported verbatim from design_handoff_alibars_portfolio/content.json, with
- * the owner overrides from docs/implementation-notes.md applied:
- *  - City Racing CV bullet keeps "Aug. 2025 – Present" removed in favour of a
- *    two-bullet CV entry (dates below) and the csg.racing bullet dropped.
- *  - Unknown URLs are '#TODO-...' placeholders; any CTA/link whose href is
- *    still a placeholder is hidden (src/lib/url.ts isPlaceholderUrl) until
- *    a real URL replaces it.
- */
-
 import type { SheetId } from '@/lib/pile';
 
 export type { SheetId };
@@ -101,8 +90,7 @@ const projects: ProjectEntry[] = [
   },
   {
     title: 'Automated Publishing Platform',
-    // TODO(ali): GitHub repo URL for the Automated Publishing Platform.
-    href: '#TODO-automated-publishing-platform-github',
+    href: 'https://github.com/AliBars19/SDMNH-RENDER-AUTOMATION',
     highlight: 'purple',
     icon: 'github',
     stack: 'Next.js, TypeScript, OAuth',
@@ -194,8 +182,7 @@ export const crumbify = {
   ctas: [
     // TODO(ali): App Store URL for Crumbify.
     { label: 'Get it on the App Store ↗', href: '#TODO-crumbify-app-store' },
-    // TODO(ali): GitHub repo URL for Crumbify.
-    { label: 'View on GitHub', href: '#TODO-crumbify-github', icon: 'github' as const },
+    { label: 'View on GitHub', href: 'https://github.com/crumbifyapp', icon: 'github' as const },
   ],
   screenshots: ['/images/cv-crumb-1.webp', '/images/cv-crumb-2.webp', '/images/cv-crumb-3.webp'],
   underTheHoodLabel: 'Under the hood',
@@ -269,8 +256,7 @@ export const video = {
     "A batch pipeline in Python. ffmpeg pulls and trims the audio, Whisper transcribes it with word-level timestamps, and a JSX script drives After Effects to build the composition, grade the colours and sync the lyrics. It runs 50+ jobs at a time and renders on AWS EC2, so there's no manual editing left.",
     'Finished videos go to a separate Next.js service that schedules and posts them to TikTok and YouTube.',
   ],
-  // TODO(ali): GitHub repo URL for the video pipeline.
-  cta: { label: 'View the code on GitHub', href: '#TODO-video-pipeline-github', icon: 'github' as const },
+  cta: { label: 'View the code on GitHub', href: 'https://github.com/AliBars19/Apollova', icon: 'github' as const },
 };
 
 export const about = {
