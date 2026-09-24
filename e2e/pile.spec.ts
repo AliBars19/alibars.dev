@@ -1,8 +1,68 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type ElementHandle, type Page } from '@playwright/test';
 
 const OUT_DIR = join(process.cwd(), 'out');
+const STICKY_NOTE_TEXT = '.js-stage >> text=psst: click anything highlighted';
+
+/**
+ * document.elementFromPoint skips elements with pointer-events:none, so a
+ * hit test against the (pointer-events:none) sticky note always "sees
+ * through" it to whatever sits underneath - even when the note is the
+ * thing actually painted on top there (code-r7-04). Temporarily flip the
+ * note's pointer-events to 'auto' for the duration of one elementFromPoint
+ * call, restoring it in a finally block, so a visual-coverage check can
+ * tell "note painted over X" apart from "note genuinely isn't there".
+ */
+async function hitsSelectorPastNote(
+  page: Page,
+  noteHandle: ElementHandle | null,
+  point: { x: number; y: number },
+  selector: string
+): Promise<boolean> {
+  if (noteHandle) {
+    return noteHandle.evaluate(
+      (el, { x, y, selector }) => {
+        const original = (el as HTMLElement).style.pointerEvents;
+        (el as HTMLElement).style.pointerEvents = 'auto';
+        try {
+          const hit = document.elementFromPoint(x, y);
+          return hit != null && hit.closest(selector) != null;
+        } finally {
+          (el as HTMLElement).style.pointerEvents = original;
+        }
+      },
+      { x: point.x, y: point.y, selector }
+    );
+  }
+  return page.evaluate(
+    ({ x, y, selector }) => {
+      const hit = document.elementFromPoint(x, y);
+      return hit != null && hit.closest(selector) != null;
+    },
+    { x: point.x, y: point.y, selector }
+  );
+}
+
+/** The client rect of the sticky note's first rendered text line, via a Range over its (single) text node. */
+async function noteFirstLineRect(
+  page: Page
+): Promise<{ left: number; top: number; width: number; height: number } | null> {
+  const note = page.locator(STICKY_NOTE_TEXT);
+  if (!(await note.count())) return null;
+  const handle = await note.first().elementHandle();
+  if (!handle) return null;
+  return handle.evaluate((el) => {
+    const textNode = el.firstChild;
+    if (!textNode) return null;
+    const range = document.createRange();
+    range.selectNodeContents(textNode);
+    const rects = Array.from(range.getClientRects());
+    if (rects.length === 0) return null;
+    const first = rects[0];
+    return { left: first.left, top: first.top, width: first.width, height: first.height };
+  });
+}
 
 /** Every built HTML file's raw source, keyed by its path relative to out/. */
 function builtHtmlFiles(): Map<string, string> {
@@ -489,7 +549,7 @@ test.describe('the pile', () => {
     expect(outlineStyle).toBe('none');
   });
 
-  test('under reduced motion, a sheet swap is a real cross-fade: the incoming sheet passes through a partial opacity instead of a hard cut (behaviour-03 / code-r4-01)', async ({
+  test('under reduced motion, a sheet swap is a real cross-fade: the incoming sheet passes through a partial opacity instead of a hard cut (behaviour-03 / code-r4-01 / code-r7-02)', async ({
     browser,
   }) => {
     const context = await browser.newContext({ reducedMotion: 'reduce' });
@@ -498,15 +558,32 @@ test.describe('the pile', () => {
     await expect(page.getByRole('heading', { level: 1, name: 'Ali Bars' })).toBeVisible();
     const incoming = page.locator('#sheet-crumbify');
 
-    await page.getByRole('button', { name: 'crumbify' }).click();
-    // Sample the incoming Crumbify sheet 50ms after the click, mid-way
-    // through the 0.2s reduced-motion opacity transition (out at 0ms, in
-    // ~16ms later).
-    await page.waitForTimeout(50);
-    const opacity = Number(await incoming.evaluate((el) => getComputedStyle(el).opacity));
+    // code-r7-02: a single opacity read after a fixed 50ms sleep is flaky -
+    // under load the read can land before the 'in' stage commits (opacity
+    // still 0) or after the ~0.2s transition has already finished (opacity
+    // back to 1). Sample every animation frame on the page itself instead,
+    // so the check is a genuine intermediate-value proof rather than a
+    // timing guess.
+    await incoming.evaluate((el) => {
+      const win = window as unknown as { __opacitySamples: number[] };
+      win.__opacitySamples = [];
+      const SAMPLE_LIMIT = 60;
+      const tick = () => {
+        win.__opacitySamples.push(Number(getComputedStyle(el).opacity));
+        if (win.__opacitySamples.length < SAMPLE_LIMIT) requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    });
 
-    expect(opacity).toBeGreaterThan(0);
-    expect(opacity).toBeLessThan(1);
+    await page.getByRole('button', { name: 'crumbify' }).click();
+    await page.waitForFunction(() => {
+      const win = window as unknown as { __opacitySamples: number[] };
+      return win.__opacitySamples.length >= 60;
+    });
+
+    const samples = await page.evaluate(() => (window as unknown as { __opacitySamples: number[] }).__opacitySamples);
+    const sawPartialOpacity = samples.some((v) => v > 0 && v < 1);
+    expect(sawPartialOpacity, `expected an intermediate opacity in samples: ${samples.join(', ')}`).toBe(true);
     await context.close();
   });
 
@@ -538,6 +615,7 @@ test.describe('the pile', () => {
   });
 
   const MOBILE_TAB_WIDTHS = [360, 390, 430, 480, 520, 560, 599];
+  const MOBILE_TAB_COUNT = 5;
 
   for (const width of MOBILE_TAB_WIDTHS) {
     test(`at ${width}px, every mobile tab stays hit-testable above the sticky note on /#cv (slice-rvat5-01)`, async ({
@@ -546,10 +624,16 @@ test.describe('the pile', () => {
       await page.setViewportSize({ width, height: 844 });
       await page.goto('/#cv');
       const nav = page.locator('nav[data-variant="mobile"]');
-      await expect(nav).toBeVisible();
+      // code-r7-03: nav.toBeVisible() passes on the pre-hydration SSR
+      // markup too (opacity:0 still counts as "visible"), and it stays
+      // aria-hidden until usePile reaches phase 'done'. Wait for hydration
+      // to actually clear aria-hidden, then require the full tab count,
+      // before counting/clicking - otherwise the count can read 0 on a
+      // run that starts before React has attached.
+      await expect(nav).not.toHaveAttribute('aria-hidden', 'true');
       const tabs = nav.getByRole('button');
+      await expect(tabs).toHaveCount(MOBILE_TAB_COUNT);
       const count = await tabs.count();
-      expect(count).toBeGreaterThan(0);
 
       for (let i = 0; i < count; i += 1) {
         const tab = tabs.nth(i);
@@ -564,34 +648,6 @@ test.describe('the pile', () => {
         expect(hitsTab, `tab index ${i} at ${width}px is not hit-testable at its centre`).toBe(true);
       }
 
-      // The note must not visually cover any mobile tab label. A raw
-      // bounding-box overlap is not itself coverage (the note can sit
-      // behind a tab, painted-over, with no visible clash) - what matters
-      // is which element actually wins the paint wherever the two boxes
-      // overlap. Sample the centre of each box's intersection and require
-      // the tab, not the note, to be on top there.
-      const note = page.locator('.js-stage >> text=psst: click anything highlighted');
-      if (await note.count()) {
-        const noteBox = await note.first().boundingBox();
-        if (noteBox) {
-          for (let i = 0; i < count; i += 1) {
-            const box = await tabs.nth(i).boundingBox();
-            if (!box) continue;
-            const ix1 = Math.max(box.x, noteBox.x);
-            const iy1 = Math.max(box.y, noteBox.y);
-            const ix2 = Math.min(box.x + box.width, noteBox.x + noteBox.width);
-            const iy2 = Math.min(box.y + box.height, noteBox.y + noteBox.height);
-            if (ix2 <= ix1 || iy2 <= iy1) continue; // no geometric overlap at all
-            const point = { x: (ix1 + ix2) / 2, y: (iy1 + iy2) / 2 };
-            const tabWinsHere = await page.evaluate(({ x, y }) => {
-              const el = document.elementFromPoint(x, y);
-              return el?.closest('nav[data-variant="mobile"] button') != null;
-            }, point);
-            expect(tabWinsHere, `tab index ${i} at ${width}px is visually covered by the sticky note`).toBe(true);
-          }
-        }
-      }
-
       const lastTab = tabs.nth(count - 1);
       const label = (await lastTab.textContent())?.trim();
       await lastTab.click();
@@ -599,9 +655,59 @@ test.describe('the pile', () => {
     });
   }
 
+  const NOTE_TEXT_COVERAGE_WIDTHS = [540, 560, 580, 599];
+
+  for (const width of NOTE_TEXT_COVERAGE_WIDTHS) {
+    test(`at ${width}px, the sticky note's first text line is never visually covered by the mobile tab row, and there is no horizontal scroll (code-r7-04 / slice-r7-01)`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width, height: 844 });
+      await page.goto('/#cv');
+      const nav = page.locator('nav[data-variant="mobile"]');
+      await expect(nav).not.toHaveAttribute('aria-hidden', 'true');
+      await expect(nav.getByRole('button')).toHaveCount(MOBILE_TAB_COUNT);
+
+      const canScrollHorizontally = await page.evaluate(() => {
+        window.scrollTo(500, 0);
+        return window.scrollX > 0;
+      });
+      expect(canScrollHorizontally, `note position at ${width}px causes horizontal scroll`).toBe(false);
+
+      const rect = await noteFirstLineRect(page);
+      expect(rect, `sticky note text not found at ${width}px`).not.toBeNull();
+      if (!rect) return;
+
+      // The old check used elementFromPoint against the note directly,
+      // which is always skipped (pointer-events:none) and so could never
+      // fail (code-r7-04). Toggle the note interactive for the duration of
+      // each sample and require none of them to resolve inside the mobile
+      // tab row, sampling across the whole width of the first line, not
+      // just its centre.
+      const note = page.locator(STICKY_NOTE_TEXT);
+      const noteHandle = await note.first().elementHandle();
+      const y = rect.top + rect.height / 2;
+      const SAMPLE_STEPS = 20;
+      for (let i = 0; i <= SAMPLE_STEPS; i += 1) {
+        const x = rect.left + (rect.width * i) / SAMPLE_STEPS;
+        const hitsNav = await hitsSelectorPastNote(page, noteHandle, { x, y }, 'nav[data-variant="mobile"]');
+        expect(
+          hitsNav,
+          `note's first text line at fraction ${i}/${SAMPLE_STEPS} is covered by the mobile tab row at ${width}px`
+        ).toBe(false);
+      }
+    });
+  }
+
   const GITHUB_LINK_TEST_WIDTHS = [560, 600, 640];
 
   for (const width of GITHUB_LINK_TEST_WIDTHS) {
+    // Unlike the mobile-tab-row / note text-coverage check above, this test
+    // is about actual click routing, not visual coverage: the note is
+    // pointer-events:none, so document.elementFromPoint (which a real click
+    // resolves through the same way) correctly "sees past" it to whatever
+    // is underneath, with no toggle needed. code-r7-04 only replaced the
+    // dead visual-coverage assertion above; this click-interception check
+    // stays as it was and keeps passing.
     test(`at ${width}px, the sticky note does not intercept clicks on the CV's GitHub contact link (behaviour-03)`, async ({
       page,
     }) => {
