@@ -499,8 +499,9 @@ test.describe('the pile', () => {
     const incoming = page.locator('#sheet-crumbify');
 
     await page.getByRole('button', { name: 'crumbify' }).click();
-    // Sample "about" 50ms after the click, mid-way through the 0.2s
-    // reduced-motion opacity transition (out at 0ms, in ~16ms later).
+    // Sample the incoming Crumbify sheet 50ms after the click, mid-way
+    // through the 0.2s reduced-motion opacity transition (out at 0ms, in
+    // ~16ms later).
     await page.waitForTimeout(50);
     const opacity = Number(await incoming.evaluate((el) => getComputedStyle(el).opacity));
 
