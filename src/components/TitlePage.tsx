@@ -34,7 +34,9 @@ export function TitlePage({ pulling, zIndex, onDismiss }: TitlePageProps) {
       onClick={onDismiss}
       onKeyDown={handleKeyDown}
     >
-      <div className={styles.kicker}>{title.kicker}</div>
+      <div className={styles.kicker}>
+        <span>{title.kicker}</span>
+      </div>
       <div className={styles.body}>
         <h1 className={styles.name}>{title.name}</h1>
         <p className={styles.line}>{title.line}</p>

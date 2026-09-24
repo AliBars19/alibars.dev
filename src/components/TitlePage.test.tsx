@@ -1,7 +1,11 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { TitlePage } from './TitlePage';
+
+const cssSource = readFileSync(join(process.cwd(), 'src/components/TitlePage.module.css'), 'utf-8');
 
 describe('TitlePage', () => {
   it('renders the kicker, name, line and cta, and is a real, keyboard-operable button', async () => {
@@ -37,5 +41,14 @@ describe('TitlePage', () => {
     const heading = screen.getByRole('heading', { level: 1, name: 'Ali Bars' });
     const body = heading.parentElement;
     expect(body?.tagName).toBe('DIV');
+  });
+
+  it('kicker is a flex row wrapping its text in a span, matching the prototype (intro-03)', () => {
+    render(<TitlePage pulling={false} zIndex={26} onDismiss={() => {}} />);
+    const kickerText = screen.getByText('vol. 01');
+    expect(kickerText.tagName).toBe('SPAN');
+    const block = cssSource.match(/\.kicker\s*{([^}]*)}/);
+    expect(block).not.toBeNull();
+    expect(block?.[1]).toMatch(/display:\s*flex/);
   });
 });
