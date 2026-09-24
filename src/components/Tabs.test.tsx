@@ -39,6 +39,16 @@ describe('Tabs', () => {
     expect(inactive.className).not.toMatch(/active/);
   });
 
+  // slice-r7-02: text-transform: uppercase makes Chromium's accessibility
+  // tree read the tab names as 'CV'/'VIDEO BOT'/etc (jsdom ignores CSS, so
+  // it can't catch this); an explicit aria-label pins the accessible name
+  // to the lower-case label from content.ts, matching the prototype.
+  it('sets aria-label to the lower-case tab label, independent of the rendered text-transform', () => {
+    render(<Tabs top="cv" moving={null} onSelect={() => {}} variant="desktop" />);
+    expect(screen.getByRole('button', { name: 'cv' })).toHaveAttribute('aria-label', 'cv');
+    expect(screen.getByRole('button', { name: 'video bot' })).toHaveAttribute('aria-label', 'video bot');
+  });
+
   it('mobile variant renders a data-variant="mobile" row with no inline transform on any tab', () => {
     render(<Tabs top="cv" moving={null} onSelect={() => {}} variant="mobile" />);
     const nav = screen.getByRole('navigation');

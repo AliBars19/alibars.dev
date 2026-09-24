@@ -56,6 +56,7 @@ export function Tabs({ top, moving, onSelect, zIndex, variant, hidden }: TabsPro
           <button
             key={tab.id}
             type="button"
+            aria-label={tab.label}
             className={`${tabClass} ${active ? styles.active : ''}`}
             style={{
               top: isDesktop ? TAB_TOP_OFFSET + i * TAB_PITCH : undefined,
