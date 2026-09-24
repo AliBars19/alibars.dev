@@ -4,7 +4,9 @@
  * the owner overrides from docs/implementation-notes.md applied:
  *  - City Racing CV bullet keeps "Aug. 2025 – Present" removed in favour of a
  *    two-bullet CV entry (dates below) and the csg.racing bullet dropped.
- *  - Unknown URLs are '#TODO-...' placeholders so buttons still render.
+ *  - Unknown URLs are '#TODO-...' placeholders; any CTA/link whose href is
+ *    still a placeholder is hidden (src/lib/url.ts isPlaceholderUrl) until
+ *    a real URL replaces it.
  */
 
 import type { SheetId } from '@/lib/pile';
