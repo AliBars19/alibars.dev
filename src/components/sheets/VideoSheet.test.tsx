@@ -47,10 +47,26 @@ describe('VideoSheet', () => {
     });
     const { VideoSheet: MockedVideoSheet } = await import('./VideoSheet');
     render(<MockedVideoSheet onBack={() => {}} />);
-    expect(screen.getByRole('link', { name: /View the code on GitHub/ })).toHaveAttribute(
-      'href',
-      'https://github.com/AliBars19/video-pipeline'
-    );
+    const link = screen.getByRole('link', { name: /View the code on GitHub/ });
+    expect(link).toHaveAttribute('href', 'https://github.com/AliBars19/video-pipeline');
+    expect(link.querySelector('svg')).not.toBeNull();
+  });
+
+  it('renders the GitHub CTA with no icon when content.ts sets no icon field (code-r5-01)', async () => {
+    vi.doMock('@/content', async (importOriginal) => {
+      const actual = await importOriginal<typeof import('@/content')>();
+      return {
+        ...actual,
+        video: {
+          ...actual.video,
+          cta: { label: 'View the code on GitHub', href: 'https://github.com/AliBars19/video-pipeline' },
+        },
+      };
+    });
+    const { VideoSheet: MockedVideoSheet } = await import('./VideoSheet');
+    render(<MockedVideoSheet onBack={() => {}} />);
+    const link = screen.getByRole('link', { name: /View the code on GitHub/ });
+    expect(link.querySelector('svg')).toBeNull();
   });
 
   it('back pill calls onBack', async () => {
@@ -64,10 +80,5 @@ describe('VideoSheet', () => {
     const block = cssSource.match(/\.paragraph\s*{([^}]*)}/);
     expect(block).not.toBeNull();
     expect(block?.[1]).toMatch(/text-wrap:\s*pretty/);
-  });
-
-  it("the GitHub CTA's icon is driven by content.ts's cta.icon field, not always rendered (code-r4-03)", () => {
-    const source = readFileSync(join(process.cwd(), 'src/components/sheets/VideoSheet.tsx'), 'utf-8');
-    expect(source).toMatch(/video\.cta\.icon/);
   });
 });

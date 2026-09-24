@@ -53,10 +53,9 @@ describe('CrumbifySheet', () => {
     expect(sentence.className).toContain('rowText');
   });
 
-  it('the GitHub CTA reads its label and icon from content.ts instead of hardcoding them (slice-cvcr4-02 / code-r4-03)', () => {
+  it('the GitHub CTA reads its label from content.ts instead of hardcoding it (slice-cvcr4-02 / code-r4-03)', () => {
     const ctasSource = readFileSync(join(process.cwd(), 'src/components/sheets/CrumbifyCtas.tsx'), 'utf-8');
     expect(ctasSource).not.toMatch(/>\s*View on GitHub\s*</);
     expect(ctasSource).toMatch(/github\.label/);
-    expect(ctasSource).toMatch(/github\.icon/);
   });
 });

@@ -14,7 +14,7 @@ describe('CrumbifyCtas', () => {
     vi.doUnmock('@/content');
   });
 
-  it('renders both CTAs when both hrefs are real URLs', async () => {
+  it('renders both CTAs when both hrefs are real URLs, and the GitHub CTA has its 20px icon', async () => {
     vi.doMock('@/content', () => ({
       crumbify: {
         ctas: [
@@ -26,7 +26,24 @@ describe('CrumbifyCtas', () => {
     const { CrumbifyCtas } = await import('./CrumbifyCtas');
     render(<CrumbifyCtas />);
     expect(screen.getByRole('link', { name: /Get it on the App Store/ })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /View on GitHub/ })).toBeInTheDocument();
+    const githubLink = screen.getByRole('link', { name: /View on GitHub/ });
+    expect(githubLink).toBeInTheDocument();
+    expect(githubLink.querySelector('svg')).not.toBeNull();
+  });
+
+  it('renders the GitHub CTA with no icon when content.ts sets no icon field (code-r5-01)', async () => {
+    vi.doMock('@/content', () => ({
+      crumbify: {
+        ctas: [
+          { label: 'Get it on the App Store ↗', href: 'https://apps.apple.com/app/crumbify/id123' },
+          { label: 'View on GitHub', href: 'https://github.com/AliBars19/crumbify' },
+        ],
+      },
+    }));
+    const { CrumbifyCtas } = await import('./CrumbifyCtas');
+    render(<CrumbifyCtas />);
+    const githubLink = screen.getByRole('link', { name: /View on GitHub/ });
+    expect(githubLink.querySelector('svg')).toBeNull();
   });
 
   it('hides only the App Store button when its href is still a TODO placeholder', async () => {
