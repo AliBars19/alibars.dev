@@ -161,7 +161,7 @@ function useBring(
       const s = stateRef.current;
       if (!canBring(s, k)) return;
       if (typeof window !== 'undefined' && window.scrollY > 80 && typeof window.scrollTo === 'function') {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        window.scrollTo({ top: 0, behavior: reducedMotion ? 'auto' : 'smooth' });
       }
       const prevTop = s.top;
       setState((prev) => ({ ...prev, moving: { k, prev: prevTop, stage: 'out' }, touched: true }));

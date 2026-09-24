@@ -336,6 +336,42 @@ describe('usePile', () => {
     expect(result.current.state.moving).toEqual({ k: 'crumbify', prev: 'cv', stage: 'in' });
   });
 
+  it('under reduced motion, bring() scrolls to top instantly instead of smoothly (behaviour-02)', () => {
+    vi.spyOn(window, 'matchMedia').mockImplementation(
+      (query: string) =>
+        ({
+          matches: query.includes('prefers-reduced-motion'),
+          media: query,
+          addEventListener: () => {},
+          removeEventListener: () => {},
+        }) as unknown as MediaQueryList
+    );
+    Object.defineProperty(window, 'scrollY', { value: 200, configurable: true });
+    const scrollToSpy = vi.fn();
+    window.scrollTo = scrollToSpy;
+    const { result } = renderHook(() => usePile());
+    // Reduced motion skips the intro straight to 'done'.
+    expect(result.current.state.phase).toBe('done');
+
+    act(() => {
+      result.current.bring('crumbify');
+    });
+    expect(scrollToSpy).toHaveBeenCalledWith({ top: 0, behavior: 'auto' });
+  });
+
+  it('without reduced motion, bring() still scrolls to top smoothly', () => {
+    Object.defineProperty(window, 'scrollY', { value: 200, configurable: true });
+    const scrollToSpy = vi.fn();
+    window.scrollTo = scrollToSpy;
+    const { result } = renderHook(() => usePile());
+    finishIntro(result);
+
+    act(() => {
+      result.current.bring('crumbify');
+    });
+    expect(scrollToSpy).toHaveBeenCalledWith({ top: 0, behavior: 'smooth' });
+  });
+
   it('a hashchange (browser Back) that arrives mid-move is queued and replayed once the move settles', () => {
     const { result } = renderHook(() => usePile());
     finishIntro(result);
