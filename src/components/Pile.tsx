@@ -1,7 +1,7 @@
 'use client';
 
 import { sheetTitles } from '@/content';
-import { fillerSheets, sheetStyle, thickness, type SheetId } from '@/lib/pile';
+import { fillerSheets, sheetStyle, thickness, type MovingState, type SheetId } from '@/lib/pile';
 import { useFocusAfterIntro, useFocusOnTopChange } from '@/lib/usePileFocus';
 import { usePile } from '@/lib/usePile';
 import { SheetFrame } from './SheetFrame';
@@ -23,6 +23,36 @@ const THICKNESS = thickness(PILE_SIZE);
 // Back-to-front DOM order for equal z-index ties, matching the reference
 // prototype: About, Video, Racing, Crumbify, CV.
 const SHEET_RENDER_ORDER: SheetId[] = ['about', 'video', 'racing', 'crumbify', 'cv'];
+
+type ContentSheetsProps = {
+  top: SheetId;
+  moving: MovingState;
+  reducedMotion: boolean;
+  bring: (id: SheetId) => void;
+  inert: boolean;
+};
+
+/** The 5 sheets themselves, split out of Pile to keep that function under the
+ * 50-line budget (code-r5-04, following the same pattern as
+ * usePileFocus/usePile/CrumbifyCtas). */
+function ContentSheets({ top, moving, reducedMotion, bring, inert }: ContentSheetsProps) {
+  return (
+    <>
+      {SHEET_RENDER_ORDER.map((id) => {
+        const style = sheetStyle(id, { top, moving }, M, reducedMotion);
+        return (
+          <SheetFrame key={id} id={id} style={style} cv={id === 'cv'} inert={inert}>
+            {id === 'cv' ? <CvSheet onOpen={bring} /> : null}
+            {id === 'crumbify' ? <CrumbifySheet onBack={() => bring('cv')} /> : null}
+            {id === 'racing' ? <RacingSheet onBack={() => bring('cv')} /> : null}
+            {id === 'video' ? <VideoSheet onBack={() => bring('cv')} /> : null}
+            {id === 'about' ? <AboutSheet onBack={() => bring('cv')} /> : null}
+          </SheetFrame>
+        );
+      })}
+    </>
+  );
+}
 
 export function Pile() {
   const { state, pull, bring, reducedMotion } = usePile();
@@ -52,18 +82,7 @@ export function Pile() {
             <div key={f.id} className={styles.filler} style={{ zIndex: f.z, background: f.bg, transform: f.transform }} />
           ))}
 
-          {SHEET_RENDER_ORDER.map((id) => {
-            const style = sheetStyle(id, { top, moving }, M, reducedMotion);
-            return (
-              <SheetFrame key={id} id={id} style={style} cv={id === 'cv'} inert={showIntro}>
-                {id === 'cv' ? <CvSheet onOpen={bring} /> : null}
-                {id === 'crumbify' ? <CrumbifySheet onBack={() => bring('cv')} /> : null}
-                {id === 'racing' ? <RacingSheet onBack={() => bring('cv')} /> : null}
-                {id === 'video' ? <VideoSheet onBack={() => bring('cv')} /> : null}
-                {id === 'about' ? <AboutSheet onBack={() => bring('cv')} /> : null}
-              </SheetFrame>
-            );
-          })}
+          <ContentSheets top={top} moving={moving} reducedMotion={reducedMotion} bring={bring} inert={showIntro} />
 
           {showTabs ? <Tabs top={top} moving={moving} onSelect={bring} zIndex={M + 1} variant="desktop" /> : null}
           {showIntro ? (

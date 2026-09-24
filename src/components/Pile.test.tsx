@@ -1,6 +1,28 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Pile } from './Pile';
+
+const MAX_FUNCTION_LINES = 50;
+
+/** Counts a top-level function's own lines by brace-matching from its
+ * signature line to the line that closes it, mirroring how round-3/round-5
+ * reviews counted Pile against the coding-style 50-line function budget. */
+function countFunctionLines(source: string, signature: string): number {
+  const lines = source.split('\n');
+  const start = lines.findIndex((l) => l.includes(signature));
+  if (start === -1) throw new Error(`signature not found: ${signature}`);
+  let depth = 0;
+  for (let i = start; i < lines.length; i += 1) {
+    for (const ch of lines[i] ?? '') {
+      if (ch === '{') depth += 1;
+      if (ch === '}') depth -= 1;
+    }
+    if (depth === 0 && i > start) return i - start + 1;
+  }
+  throw new Error(`no matching closing brace found for ${signature}`);
+}
 
 function mockMatchMedia(reduced = false) {
   vi.spyOn(window, 'matchMedia').mockImplementation(
@@ -126,5 +148,11 @@ describe('Pile', () => {
     expect(desktopNav).not.toBeNull();
     expect(stage).not.toBeNull();
     expect(desktopNav && stage?.contains(desktopNav)).toBe(true);
+  });
+
+  it('Pile stays under the 50-line function budget (code-r5-04)', () => {
+    const source = readFileSync(join(process.cwd(), 'src/components/Pile.tsx'), 'utf-8');
+    const lineCount = countFunctionLines(source, 'export function Pile()');
+    expect(lineCount).toBeLessThan(MAX_FUNCTION_LINES);
   });
 });
