@@ -44,6 +44,25 @@ async function hitsSelectorPastNote(
   );
 }
 
+/**
+ * Waits for the sticky note's entry animation (`noteIn`, StickyNote.module.css)
+ * to finish before any position/hit-test measurement is taken. Sampling while
+ * the note is still animating from translateY(12px) to its settled position
+ * measures a transient location, not the real one, and can hide a genuine
+ * regression (code-r8-02).
+ */
+async function waitForNoteAnimations(page: Page): Promise<void> {
+  const note = page.locator(STICKY_NOTE_TEXT);
+  if (!(await note.count())) return;
+  await note.first().evaluate((el) =>
+    Promise.all(
+      (el.closest('[class*="note"]') ?? el)
+        .getAnimations({ subtree: true })
+        .map((a) => a.finished)
+    )
+  );
+}
+
 /** The client rect of the sticky note's first rendered text line, via a Range over its (single) text node. */
 async function noteFirstLineRect(
   page: Page
@@ -635,16 +654,20 @@ test.describe('the pile', () => {
       await expect(tabs).toHaveCount(MOBILE_TAB_COUNT);
       const count = await tabs.count();
 
+      // code-r8-01: a plain elementFromPoint always "sees through" the note
+      // (pointer-events:none), so it can never detect the note painting over
+      // a tab. Toggle the note interactive for the duration of each hit test
+      // instead, same as the note-text coverage check below.
+      await waitForNoteAnimations(page);
+      const noteHandle = await page.locator(STICKY_NOTE_TEXT).first().elementHandle();
+
       for (let i = 0; i < count; i += 1) {
         const tab = tabs.nth(i);
         const box = await tab.boundingBox();
         expect(box).not.toBeNull();
         if (!box) continue;
         const centre = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
-        const hitsTab = await page.evaluate(({ x, y }) => {
-          const el = document.elementFromPoint(x, y);
-          return el?.closest('nav[data-variant="mobile"] button') != null;
-        }, centre);
+        const hitsTab = await hitsSelectorPastNote(page, noteHandle, centre, 'nav[data-variant="mobile"] button');
         expect(hitsTab, `tab index ${i} at ${width}px is not hit-testable at its centre`).toBe(true);
       }
 
@@ -673,6 +696,10 @@ test.describe('the pile', () => {
       });
       expect(canScrollHorizontally, `note position at ${width}px causes horizontal scroll`).toBe(false);
 
+      // code-r8-02: the note is still mid-way through its 0.6s noteIn entry
+      // animation right after aria-hidden clears, so measuring immediately
+      // samples a transient (higher) position instead of the settled one.
+      await waitForNoteAnimations(page);
       const rect = await noteFirstLineRect(page);
       expect(rect, `sticky note text not found at ${width}px`).not.toBeNull();
       if (!rect) return;
