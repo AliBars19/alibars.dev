@@ -13,6 +13,7 @@ Spec: `design_handoff_alibars_portfolio/README.md` (high fidelity, authoritative
 ## Lanes
 - Implementation: Codex `gpt-5.6-luna` was out of quota on 2026-09-23 (resets 2026-09-24 17:17), so per the fallback rule the build went to a Claude sonnet writer. Review: Claude opus with a default-REFUTE stance (sol also out of quota).
 - Fix round 4b (2026-09-24): Codex `gpt-5.6-luna` was still out of quota (status check reported "try again at Sep 24th, 2026 5:17 PM"), so per the CODEX UNAVAILABLE = CLAUDE WRITES rule the fix went to a Claude sonnet writer directly, no review round (owner request, direct fix).
+- Fix round 7 (2026-09-24): Codex `gpt-5.6-luna` status check again reported "You've hit your usage limit... try again at Sep 24th, 2026 5:17 PM", so per the CODEX UNAVAILABLE = CLAUDE WRITES rule the fix went to a Claude sonnet writer directly.
 
 ## Deviations log
 - `/#cv`: treated as a deep link (skips the intro, opens the CV directly), matching the acceptance checklist's `extra-intro-21` decision and the orchestration log below. Only a known sheet id (`#cv`, `#crumbify`, `#racing`, `#video`, `#about`) skips the intro. An unknown hash such as `/#bogus` plays the normal intro. The inline pre-hydration script and usePile share one definition (orchestrator decision 2026-09-23, review round 2).
