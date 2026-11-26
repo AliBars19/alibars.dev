@@ -180,8 +180,7 @@ export const crumbify = {
   intro:
     'An iOS app for finding food through the people you follow. I designed and built it on my own, got it through App Store review, and run Crumbify Ltd as the sole director.',
   ctas: [
-    // TODO(ali): App Store URL for Crumbify.
-    { label: 'Get it on the App Store ↗', href: '#TODO-crumbify-app-store' },
+    { label: 'Get it on the App Store ↗', href: 'https://apps.apple.com/us/app/crumbify-restaurant-discovery/id6777163992' },
     { label: 'View on GitHub', href: 'https://github.com/crumbifyapp', icon: 'github' as const },
   ],
   screenshots: ['/images/cv-crumb-1.webp', '/images/cv-crumb-2.webp', '/images/cv-crumb-3.webp'],
