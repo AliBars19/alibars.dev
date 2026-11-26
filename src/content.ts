@@ -250,7 +250,7 @@ export const video = {
     { v: '7.1M', l: 'likes' },
     { v: '25K', l: 'followers' },
   ],
-  tiktok: { label: '@apollovaaa on TikTok ↗', href: 'https://www.tiktok.com/@apollovaaa' },
+  tiktok: { label: '@caprllix on TikTok ↗', href: 'https://www.tiktok.com/@caprllix' },
   body: [
     "A batch pipeline in Python. ffmpeg pulls and trims the audio, Whisper transcribes it with word-level timestamps, and a JSX script drives After Effects to build the composition, grade the colours and sync the lyrics. It runs 50+ jobs at a time and renders on AWS EC2, so there's no manual editing left.",
     'Finished videos go to a separate Next.js service that schedules and posts them to TikTok and YouTube.',
